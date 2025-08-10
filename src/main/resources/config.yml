@@ -14,7 +14,7 @@ entity_cleanup:
   cleanupExperienceOrbs: true
   # 是否清理箭矢
   cleanupArrows: true
-  # 是否清理凋落物（掉落的方块）
+  # 是否清理掉落物（掉落的方块）
   cleanupFallingBlocks: true
   # 是否清理敌对生物（启用时只清理50%，保持生态平衡）
   cleanupHostileMobs: false
@@ -27,8 +27,8 @@ thresholds:
   maxItemsPerChunk: 40
   # 每个区块最大实体数量（50人服务器建议80-120）
   maxEntitiesPerChunk: 100
-  # 物品存在时间阈值（秒）- 50人服务器建议240-360秒
-  itemAgeThreshold: 300
+  # 物品存在时间阈值（秒）- 50人服务器建议60-180秒
+  itemAgeThreshold: 60
 
 # 畜牧业管理设置
 livestock:
@@ -52,6 +52,39 @@ performance:
   # 批次间延迟（毫秒）- 减少服务器压力
   batchDelay: 10
 
+# TPS监控设置
+tps_monitoring:
+  # 是否启用TPS监控
+  enabled: true
+  # 低TPS阈值 - 当TPS低于此值时触发警告
+  lowTpsThreshold: 15.0
+  # 是否启用紧急清理 - 当TPS过低时自动执行清理
+  emergencyCleanup: true
+
+# 聚集清理设置
+cluster_cleanup:
+  # 是否启用聚集清理算法
+  enabled: true
+  # 聚集检测距离（方块）
+  detectionDistance: 5.0
+  # 最小聚集大小 - 多少个实体才算聚集
+  minClusterSize: 8
+  # 保留比例 - 聚集清理时保留的实体比例（0.0-1.0）
+  retainRatio: 0.3
+  # 是否只计算同类型实体聚集
+  sameTypeOnly: false
+
+# 智能清理设置
+smart_cleanup:
+  # 是否保护有自定义名称的实体
+  protectNamedEntities: true
+  # 是否保护被拴绳的实体
+  protectLeashedEntities: true
+  # 是否保护被玩家骑乘的实体
+  protectRiddenEntities: true
+  # 是否根据生成原因过滤实体
+  filterBySpawnReason: false
+
 # 消息设置
 messages:
   # 是否广播清理消息
@@ -62,6 +95,6 @@ messages:
 # 全局设置
 global:
   # 插件总开关 - 控制所有自动清理功能 (默认关闭，需要手动启用)
-  enabled: false
+  enabled: true
   # 调试模式 - 输出详细日志信息
   debug: false

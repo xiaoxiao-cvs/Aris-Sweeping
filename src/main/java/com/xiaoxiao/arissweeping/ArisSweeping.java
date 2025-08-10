@@ -4,6 +4,7 @@ import com.xiaoxiao.arissweeping.config.ModConfig;
 import com.xiaoxiao.arissweeping.handler.EntityCleanupHandler;
 import com.xiaoxiao.arissweeping.handler.LivestockDensityHandler;
 import com.xiaoxiao.arissweeping.command.CleanupCommand;
+import com.xiaoxiao.arissweeping.permission.PermissionManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import java.util.logging.Logger;
 
@@ -15,6 +16,7 @@ public class ArisSweeping extends JavaPlugin {
     private EntityCleanupHandler cleanupHandler;
     private LivestockDensityHandler livestockHandler;
     private ModConfig config;
+    private PermissionManager permissionManager;
     
     @Override
     public void onEnable() {
@@ -26,6 +28,9 @@ public class ArisSweeping extends JavaPlugin {
         
         // 初始化配置
         config = new ModConfig(this);
+        
+        // 初始化权限管理器
+        permissionManager = new PermissionManager(this);
         
         // 初始化实体清理处理器
         cleanupHandler = new EntityCleanupHandler(this);
@@ -79,6 +84,10 @@ public class ArisSweeping extends JavaPlugin {
     
     public EntityCleanupHandler getCleanupHandler() {
         return cleanupHandler;
+    }
+    
+    public PermissionManager getPermissionManager() {
+        return permissionManager;
     }
     
     public LivestockDensityHandler getLivestockHandler() {

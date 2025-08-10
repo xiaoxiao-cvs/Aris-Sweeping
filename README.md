@@ -6,7 +6,7 @@
 
 ### 🎯 智能实体清理
 - **掉落物清理**: 自动清理服务器中的掉落物品，防止物品堆积影响性能
-- **凋落物清理**: 清理掉落的方块实体（如沙子、砂砾等），避免卡顿
+- **掉落物清理**: 清理掉落的方块实体（如沙子、砂砾等），避免卡顿
 - **箭矢清理**: 移除射出的箭矢，减少实体数量
 - **敌对生物清理**: 智能清理50%的敌对生物，保持生态平衡
 - **经验球清理**: 清理多余的经验球实体
@@ -16,6 +16,8 @@
 - **智能预警**: 超标前5分钟全屏提醒玩家
 - **保护机制**: 自动保护有名字的宠物和重要动物
 - **区块限制**: 可配置每个区块的最大动物数量
+- **统计查看**: 查看世界畜牧业详细统计信息
+- **随机清理**: 随机清理各种动物，避免偏向性
 
 ### 🛡️ 特殊实体保护
 - **矿车保护**: 不清理各种类型的矿车（包括箱子矿车）
@@ -69,38 +71,167 @@
 - `/arissweeping cleanup mobs` - 仅清理敌对生物
 - `/arissweeping cleanup all` - 强制清理所有实体
 
+### 畜牧业统计
+- `/arissweeping livestock-stats` - 查看世界畜牧业统计
+- `/arissweeping livestock` - 查看世界畜牧业统计（简写）
+
 ### 配置指令
 - `/arissweeping config help` - 配置指令帮助
 - `/arissweeping config list` - 查看当前配置
 - `/arissweeping config enable <true|false>` - 插件总开关
 - `/arissweeping config interval <秒>` - 设置清理间隔
+- `/arissweeping config item-age <秒>` - 设置掉落物年龄阈值（30-600秒）
 - `/arissweeping config reload` - 重新加载配置
 
 ### 清理功能配置
-- `/arissweeping config cleanup-items <true|false>` - 掉落物清理
-- `/arissweeping config cleanup-mobs <true|false>` - 敌对生物清理
-- `/arissweeping config cleanup-animals <true|false>` - 被动生物清理
-- `/arissweeping config cleanup-arrows <true|false>` - 箭矢清理
-- `/arissweeping config cleanup-falling <true|false>` - 凋落物清理
+- `/arissweeping config cleanup-items <true|false>` - 掉落物清理开关
+- `/arissweeping config cleanup-mobs <true|false>` - 敌对生物清理开关
+- `/arissweeping config cleanup-animals <true|false>` - 被动生物清理开关
+- `/arissweeping config cleanup-arrows <true|false>` - 箭矢清理开关
+- `/arissweeping config cleanup-falling <true|false>` - 掉落方块清理开关
+
+### 阈值设置
+- `/arissweeping config item-age <秒>` - 掉落物年龄阈值（30-600秒）
+  - 只有存在时间超过此阈值的掉落物才会被清理
+  - 建议值：小型服务器120秒，中型服务器90秒，大型服务器60秒
 
 ### 畜牧业管理配置
 - `/arissweeping config livestock-check <true|false>` - 密度检测开关
 - `/arissweeping config livestock-limit <数量>` - 每区块最大动物数
 - `/arissweeping config warning-time <分钟>` - 预警时间设置
+- `/arissweeping livestock-stats` - 查看世界畜牧业详细统计
 
 ### 其他配置
 - `/arissweeping config broadcast <true|false>` - 清理消息广播
 - `/arissweeping config show-stats <true|false>` - 详细统计显示
 
+### 🔐 权限管理指令
+- `/arissweeping permission give <玩家> <权限>` - 授予玩家权限
+- `/arissweeping permission remove <玩家> <权限>` - 移除玩家权限
+- `/arissweeping permission list [玩家]` - 查看权限列表
+- `/arissweeping permission reload` - 重新加载权限配置
+
+**可用权限节点：**
+- `arissweeping.admin` - 管理员权限（包含所有功能）
+- `arissweeping.cleanup` - 清理权限
+- `arissweeping.stats` - 统计查看权限
+- `arissweeping.config` - 配置修改权限
+
 ## 🔧 配置文件说明
 
 ### 重要概念区分
 
-**掉落物 (Items)** vs **凋落物 (Falling Blocks)**:
-- **掉落物**: 玩家丢弃或生物死亡掉落的物品实体，如钻石、食物、工具等
-- **凋落物**: 受重力影响掉落的方块实体，如沙子、砂砾、铁砧等
+**掉落物 (Items)** vs **掉落物 (Falling Blocks)**:
+- **掉落物**: 玩家丢弃或生物死亡掉落的物品
+- **掉落物**: 受重力影响掉落的方块实体，如沙子、砂砾、铁砧等
 
 两者是完全不同的实体类型，需要分别配置清理规则。
+
+## 📊 畜牧业统计功能
+
+### 功能特性
+
+**世界畜牧业统计** 提供了全面的服务器动物管理信息：
+
+- **总体统计**: 显示所有世界的动物总数、已加载区块数和超标区块数
+- **世界详情**: 按世界分别显示动物数量和分布情况
+- **类型分布**: 在调试模式下显示各种动物类型的详细数量
+- **实时数据**: 基于当前已加载区块的实时统计
+- **性能友好**: 异步处理，不影响服务器性能
+
+### 使用方法
+
+```bash
+# 查看世界畜牧业统计
+/arissweeping livestock-stats
+
+# 简写命令
+/arissweeping livestock
+```
+
+### 统计信息说明
+
+**总体统计包含：**
+- 总动物数量：所有世界中的动物总数
+- 已加载区块：当前服务器已加载的区块数量
+- 超标区块：动物数量超过配置限制的区块数
+- 密度阈值：当前配置的每区块最大动物数量
+
+**各世界详情包含：**
+- 世界名称和该世界的动物总数
+- 调试模式下显示动物类型分布（如牛、羊、猪等的具体数量）
+
+### 权限要求
+
+使用畜牧业统计功能需要 `arissweeping.stats` 权限。
+
+### 配置建议
+
+- 启用调试模式可查看更详细的动物类型分布
+- 建议定期查看统计信息以优化服务器性能
+- 根据统计结果调整畜牧业密度限制
+
+## 🔐 权限管理系统
+
+### 权限节点说明
+
+本插件内置了简单的权限管理系统，无需额外的权限插件即可使用：
+
+| 权限节点 | 说明 | 包含功能 |
+|---------|------|----------|
+| `arissweeping.admin` | 管理员权限 | 所有功能 + 权限管理 |
+| `arissweeping.cleanup` | 清理权限 | 执行各种清理操作 |
+| `arissweeping.stats` | 统计权限 | 查看统计信息和TPS |
+| `arissweeping.config` | 配置权限 | 修改配置和切换开关 |
+
+### 权限管理指令
+
+```bash
+# 授予权限
+/arissweeping permission give <玩家名> <权限节点>
+
+# 移除权限
+/arissweeping permission remove <玩家名> <权限节点>
+
+# 查看所有玩家权限
+/arissweeping permission list
+
+# 查看指定玩家权限
+/arissweeping permission list <玩家名>
+
+# 重新加载权限配置
+/arissweeping permission reload
+```
+
+### 使用示例
+
+```bash
+# 给玩家Steve授予清理权限
+/arissweeping permission give Steve arissweeping.cleanup
+
+# 给管理员Alice授予完整管理权限
+/arissweeping permission give Alice arissweeping.admin
+
+# 移除玩家Bob的配置权限
+/arissweeping permission remove Bob arissweeping.config
+
+# 查看玩家Steve的权限
+/arissweeping permission list Steve
+```
+
+### 权限特性
+
+- **持久化存储**: 权限数据保存在 `permissions.yml` 文件中
+- **实时生效**: 权限变更立即生效，无需重启
+- **通知系统**: 权限变更时自动通知所有OP和管理员
+- **配置通知**: 配置修改时向有权限的用户发送通知
+- **Tab补全**: 支持玩家名和权限节点的智能补全
+
+### 默认权限
+
+- **OP用户**: 自动拥有所有权限
+- **普通玩家**: 默认无任何权限，需要手动授予
+- **权限继承**: `arissweeping.admin` 权限包含所有其他权限
 
 ### 默认配置
 ```yaml
@@ -114,7 +245,7 @@ entity_cleanup:
   cleanupItems: true              # 清理掉落物
   cleanupExperienceOrbs: true     # 清理经验球
   cleanupArrows: true             # 清理箭矢
-  cleanupFallingBlocks: true      # 清理凋落物
+  cleanupFallingBlocks: true      # 清理掉落物
   cleanupHostileMobs: false       # 敌对生物清理（50%概率）
   cleanupPassiveMobs: false       # 被动生物清理（建议保持关闭）
 
@@ -142,6 +273,27 @@ livestock:
 
 ## 📝 更新日志
 
+### v1.0.3
+- ✨ 新增世界畜牧业统计功能 `/arissweeping livestock-stats`
+- ✨ 支持查看各世界动物数量、区块统计和类型分布
+- 🔧 优化畜牧业清理机制，实现随机清理各种动物
+- 🔧 规范化警告消息称谓，统一为"老师们"
+- 🔧 添加清理完成后的"光呀！"广播消息
+- 📊 异步统计处理，不影响服务器性能
+- 📚 完善Tab补全和帮助文档
+
+### v1.0.2
+- ✨ 新增掉落物年龄阈值指令配置功能 `/arissweeping config item-age <秒>`
+- ✨ 支持通过指令动态调整掉落物年龄阈值（30-600秒）
+- 🔧 完善了Tab补全功能，支持掉落物年龄阈值配置
+- 📚 更新了帮助文档和配置说明
+
+### v1.0.1
+- 🔧 修复清理间隔时间计算错误
+- 🔧 修复异步清理完成消息显示问题
+- 🔧 优化清理警告时间逻辑
+- 🔧 修正术语显示错误（凋落物→掉落物）
+
 ### v1.0.0
 - ✅ 基础实体清理功能
 - ✅ 智能实体保护机制
@@ -149,8 +301,11 @@ livestock:
 - ✅ 完整的配置指令系统
 - ✅ 美化的用户界面
 - ✅ 全局开关控制
-- ✅ 凋落物清理功能
+- ✅ 掉落物清理功能
 - ✅ 性能优化和异步处理
+- ✅ 内置权限管理系统
+- ✅ 配置变更实时通知
+- ✅ 权限分级管理
 
 ## 💝 特别感谢
 
@@ -215,7 +370,7 @@ maxItemsPerChunk = 50
 # 每个区块最大实体数量
 maxEntitiesPerChunk = 100
 # 物品存在时间阈值（秒）
-itemAgeThreshold = 300
+itemAgeThreshold = 60
 
 [performance]
 # 是否使用异步清理
@@ -267,28 +422,28 @@ showCleanupStats = true
 
 ### 推荐配置（小型服务器 < 20人）
 ```toml
-cleanupInterval = 300
-maxItemsPerChunk = 30
-maxEntitiesPerChunk = 80
-itemAgeThreshold = 240
+cleanupInterval = 600
+maxItemsPerChunk = 60
+maxEntitiesPerChunk = 120
+itemAgeThreshold = 120
 maxChunksPerTick = 3
 ```
 
 ### 推荐配置（中型服务器 20-50人）
 ```toml
-cleanupInterval = 180
+cleanupInterval = 300
 maxItemsPerChunk = 40
-maxEntitiesPerChunk = 100
-itemAgeThreshold = 300
+maxEntitiesPerChunk = 80
+itemAgeThreshold = 90
 maxChunksPerTick = 5
 ```
 
 ### 推荐配置（大型服务器 > 50人）
 ```toml
 cleanupInterval = 120
-maxItemsPerChunk = 50
-maxEntitiesPerChunk = 120
-itemAgeThreshold = 180
+maxItemsPerChunk = 20
+maxEntitiesPerChunk = 60
+itemAgeThreshold = 60
 maxChunksPerTick = 8
 ```
 

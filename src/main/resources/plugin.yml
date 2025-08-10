@@ -1,7 +1,8 @@
+# Bukkit/Spigot/Paper Plugin Configuration
 name: ArisSweeping
 version: ${version}
 main: com.xiaoxiao.arissweeping.ArisSweeping
-api-version: 1.20
+api-version: "1.20"
 author: xiaoxiao
 description: 女仆爱丽丝 - 高性能Minecraft服务端实体清理插件
 website: https://github.com/xiaoxiao-cvs/Aris-Sweeping
@@ -9,7 +10,7 @@ website: https://github.com/xiaoxiao-cvs/Aris-Sweeping
 commands:
   arissweeping:
     description: Aris Sweeping插件主命令
-    usage: /arissweeping <cleanup|stats|config|help>
+    usage: /arissweeping <cleanup|stats|config|toggle|help>
     aliases: [as, sweep]
     permission: arissweeping.admin
     permission-message: §c你没有权限使用此命令！

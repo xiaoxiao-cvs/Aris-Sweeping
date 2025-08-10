@@ -21,13 +21,14 @@ public class ModConfig {
         config.addDefault("entity_cleanup.cleanupItems", true);
         config.addDefault("entity_cleanup.cleanupExperienceOrbs", true);
         config.addDefault("entity_cleanup.cleanupArrows", true);
+        config.addDefault("entity_cleanup.cleanupFallingBlocks", true);
         config.addDefault("entity_cleanup.cleanupHostileMobs", false);
         config.addDefault("entity_cleanup.cleanupPassiveMobs", false);
         
         // 清理阈值设置
         config.addDefault("thresholds.maxItemsPerChunk", 50);
         config.addDefault("thresholds.maxEntitiesPerChunk", 100);
-        config.addDefault("thresholds.itemAgeThreshold", 300);
+        config.addDefault("thresholds.itemAgeThreshold", 60);
         
         // 性能设置
         config.addDefault("performance.asyncCleanup", true);
@@ -42,6 +43,27 @@ public class ModConfig {
         config.addDefault("livestock.maxAnimalsPerChunk", 20);
         config.addDefault("livestock.warningTime", 5);
         config.addDefault("livestock.enableWarning", true);
+        
+        // 实体密度设置
+        config.addDefault("entity_density.threshold", 500);
+        
+        // TPS监控设置
+        config.addDefault("tps_monitor.enabled", true);
+        config.addDefault("tps_monitor.lowTpsThreshold", 17.0);
+        config.addDefault("tps_monitor.emergencyCleanup", true);
+        
+        // 聚集清理设置
+        config.addDefault("cluster_cleanup.enabled", true);
+        config.addDefault("cluster_cleanup.detectionDistance", 3.0);
+        config.addDefault("cluster_cleanup.minClusterSize", 5);
+        config.addDefault("cluster_cleanup.preserveRatio", 0.3);
+        config.addDefault("cluster_cleanup.onlyCountSameType", true);
+        
+        // 智能清理设置
+        config.addDefault("smart_cleanup.protectNamedEntities", true);
+        config.addDefault("smart_cleanup.protectLeashedEntities", true);
+        config.addDefault("smart_cleanup.protectRiddenEntities", true);
+        config.addDefault("smart_cleanup.spawnReasonFilter", false);
         
         // 全局设置
         config.addDefault("global.enabled", false);
@@ -101,7 +123,7 @@ public class ModConfig {
     }
     
     public int getItemAgeThreshold() {
-        return config.getInt("thresholds.itemAgeThreshold", 300);
+        return config.getInt("thresholds.itemAgeThreshold", 60);
     }
     
     // 性能设置
@@ -154,6 +176,62 @@ public class ModConfig {
     
     public boolean isShowCleanupStats() {
         return config.getBoolean("messages.showCleanupStats", true);
+    }
+    
+    // TPS监控配置
+    public boolean isTpsMonitorEnabled() {
+        return config.getBoolean("tps_monitor.enabled", true);
+    }
+    
+    public double getLowTpsThreshold() {
+        return config.getDouble("tps_monitor.lowTpsThreshold", 17.0);
+    }
+    
+    public boolean isEmergencyCleanupEnabled() {
+        return config.getBoolean("tps_monitor.emergencyCleanup", true);
+    }
+    
+    // 聚集清理配置
+    public boolean isClusterCleanupEnabled() {
+        return config.getBoolean("cluster_cleanup.enabled", true);
+    }
+    
+    public double getClusterDetectionDistance() {
+        return config.getDouble("cluster_cleanup.detectionDistance", 3.0);
+    }
+    
+    public int getMinClusterSize() {
+        return config.getInt("cluster_cleanup.minClusterSize", 5);
+    }
+    
+    public double getClusterPreserveRatio() {
+        return config.getDouble("cluster_cleanup.preserveRatio", 0.3);
+    }
+    
+    public boolean isOnlyCountSameType() {
+        return config.getBoolean("cluster_cleanup.onlyCountSameType", true);
+    }
+    
+    // 智能清理配置
+    public boolean isProtectNamedEntities() {
+        return config.getBoolean("smart_cleanup.protectNamedEntities", true);
+    }
+    
+    public boolean isProtectLeashedEntities() {
+        return config.getBoolean("smart_cleanup.protectLeashedEntities", true);
+    }
+    
+    public boolean isProtectRiddenEntities() {
+        return config.getBoolean("smart_cleanup.protectRiddenEntities", true);
+    }
+    
+    public boolean isSpawnReasonFilterEnabled() {
+        return config.getBoolean("smart_cleanup.spawnReasonFilter", false);
+    }
+    
+    // 实体密度配置
+    public int getEntityDensityThreshold() {
+        return config.getInt("entity_density.threshold", 500);
     }
     
     // 配置文件访问方法
