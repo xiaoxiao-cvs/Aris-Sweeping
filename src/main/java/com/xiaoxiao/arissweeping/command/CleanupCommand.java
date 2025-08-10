@@ -6,6 +6,7 @@ import com.xiaoxiao.arissweeping.util.CleanupStats;
 import com.xiaoxiao.arissweeping.permission.PermissionManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -1367,11 +1368,11 @@ public class CleanupCommand implements CommandExecutor, TabCompleter {
          new BukkitRunnable() {
              @Override
              public void run() {
-                 Map<String, Integer> worldStats = new HashMap<>();
-                 Map<String, Map<String, Integer>> worldTypeStats = new HashMap<>();
-                 int totalAnimals = 0;
-                 int totalChunks = 0;
-                 int violationChunks = 0;
+                 final Map<String, Integer> worldStats = new HashMap<>();
+                final Map<String, Map<String, Integer>> worldTypeStats = new HashMap<>();
+                final int[] totalAnimals = {0};
+                final int[] totalChunks = {0};
+                final int[] violationChunks = {0};
                  
                  try {
                      for (World world : Bukkit.getWorlds()) {
@@ -1405,9 +1406,9 @@ public class CleanupCommand implements CommandExecutor, TabCompleter {
                          
                          worldStats.put(world.getName(), worldAnimalCount);
                          worldTypeStats.put(world.getName(), typeCount);
-                         totalAnimals += worldAnimalCount;
-                         totalChunks += worldChunkCount;
-                         violationChunks += worldViolationCount;
+                         totalAnimals[0] += worldAnimalCount;
+                         totalChunks[0] += worldChunkCount;
+                         violationChunks[0] += worldViolationCount;
                      }
                      
                      // 回到主线程发送消息
@@ -1422,9 +1423,9 @@ public class CleanupCommand implements CommandExecutor, TabCompleter {
                              
                              // 总体统计
                              message.append(ChatColor.AQUA).append("📊 总体统计:\n");
-                             message.append(ChatColor.WHITE).append("  总动物数量: ").append(ChatColor.YELLOW).append(totalAnimals).append("\n");
-                             message.append(ChatColor.WHITE).append("  已加载区块: ").append(ChatColor.YELLOW).append(totalChunks).append("\n");
-                             message.append(ChatColor.WHITE).append("  超标区块: ").append(violationChunks > 0 ? ChatColor.RED : ChatColor.GREEN).append(violationChunks).append("\n");
+                             message.append(ChatColor.WHITE).append("  总动物数量: ").append(ChatColor.YELLOW).append(totalAnimals[0]).append("\n");
+                             message.append(ChatColor.WHITE).append("  已加载区块: ").append(ChatColor.YELLOW).append(totalChunks[0]).append("\n");
+                             message.append(ChatColor.WHITE).append("  超标区块: ").append(violationChunks[0] > 0 ? ChatColor.RED : ChatColor.GREEN).append(violationChunks[0]).append("\n");
                              message.append(ChatColor.WHITE).append("  密度阈值: ").append(ChatColor.YELLOW).append(config.getMaxAnimalsPerChunk()).append(" 只/区块\n");
                              message.append(ChatColor.WHITE).append("\n");
                              
