@@ -1,0 +1,41 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+issueTrackerURL="https://github.com/xiaoxiao-cvs/Aris-Sweeping/issues"
+
+[[mods]]
+modId="arissweeping"
+version="${file.jarVersion}"
+displayName="Aris Sweeping"
+updateJSONURL=""
+displayURL=""
+logoFile=""
+credits="Based on Blue Archive character Alice"
+authors="xiaoxiao-cvs"
+description='''
+爱丽丝扫地 - 一个高性能的Minecraft服务器实体清理插件
+
+功能特性：
+- 自动清理掉落物和密集实体
+- 异步处理避免服务器掉刻
+- 可配置的清理间隔和阈值
+- 实时监控实体密度
+- 详细的清理统计信息
+- 公屏广播清理结果
+
+专为优化服务器性能而设计，保持服务器流畅运行。
+'''
+
+[[dependencies.arissweeping]]
+modId="forge"
+mandatory=true
+versionRange="[47.2.0,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.arissweeping]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.21)"
+ordering="NONE"
+side="BOTH"
