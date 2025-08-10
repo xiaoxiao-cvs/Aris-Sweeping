@@ -1,100 +1,167 @@
 package com.xiaoxiao.arissweeping.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
-import net.minecraftforge.common.ForgeConfigSpec.IntValue;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class ModConfig {
-    public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
-    public static final ForgeConfigSpec SPEC;
+    private final JavaPlugin plugin;
+    private FileConfiguration config;
     
-    // 清理间隔设置
-    public static final IntValue CLEANUP_INTERVAL;
+    public ModConfig(JavaPlugin plugin) {
+        this.plugin = plugin;
+        this.config = plugin.getConfig();
+        loadDefaults();
+    }
+    
+    private void loadDefaults() {
+        // 基础设置
+        config.addDefault("general.cleanupInterval", 300);
+        
+        // 实体清理设置
+        config.addDefault("entity_cleanup.cleanupItems", true);
+        config.addDefault("entity_cleanup.cleanupExperienceOrbs", true);
+        config.addDefault("entity_cleanup.cleanupArrows", true);
+        config.addDefault("entity_cleanup.cleanupHostileMobs", false);
+        config.addDefault("entity_cleanup.cleanupPassiveMobs", false);
+        
+        // 清理阈值设置
+        config.addDefault("thresholds.maxItemsPerChunk", 50);
+        config.addDefault("thresholds.maxEntitiesPerChunk", 100);
+        config.addDefault("thresholds.itemAgeThreshold", 300);
+        
+        // 性能设置
+        config.addDefault("performance.asyncCleanup", true);
+        config.addDefault("performance.maxChunksPerTick", 5);
+        
+        // 消息设置
+        config.addDefault("messages.broadcastCleanup", true);
+        config.addDefault("messages.showCleanupStats", true);
+        
+        // 畜牧业管理设置
+        config.addDefault("livestock.enableDensityCheck", true);
+        config.addDefault("livestock.maxAnimalsPerChunk", 20);
+        config.addDefault("livestock.warningTime", 5);
+        config.addDefault("livestock.enableWarning", true);
+        
+        // 全局设置
+        config.addDefault("global.enabled", false);
+        config.addDefault("global.debug", false);
+        
+        config.options().copyDefaults(true);
+        plugin.saveConfig();
+    }
+    
+    public void reload() {
+        plugin.reloadConfig();
+        this.config = plugin.getConfig();
+    }
+    
+    // 基础设置
+    public int getCleanupInterval() {
+        return config.getInt("general.cleanupInterval", 300);
+    }
+    
+    public void setCleanupInterval(int interval) {
+        config.set("general.cleanupInterval", interval);
+        plugin.saveConfig();
+    }
     
     // 实体清理设置
-    public static final BooleanValue CLEANUP_ITEMS;
-    public static final BooleanValue CLEANUP_EXPERIENCE_ORBS;
-    public static final BooleanValue CLEANUP_ARROWS;
-    public static final BooleanValue CLEANUP_HOSTILE_MOBS;
-    public static final BooleanValue CLEANUP_PASSIVE_MOBS;
+    public boolean isCleanupItems() {
+        return config.getBoolean("entity_cleanup.cleanupItems", true);
+    }
+    
+    public boolean isCleanupExperienceOrbs() {
+        return config.getBoolean("entity_cleanup.cleanupExperienceOrbs", true);
+    }
+    
+    public boolean isCleanupArrows() {
+        return config.getBoolean("entity_cleanup.cleanupArrows", true);
+    }
+    
+    public boolean isCleanupFallingBlocks() {
+        return config.getBoolean("entity_cleanup.cleanupFallingBlocks", true);
+    }
+    
+    public boolean isCleanupHostileMobs() {
+        return config.getBoolean("entity_cleanup.cleanupHostileMobs", false);
+    }
+    
+    public boolean isCleanupPassiveMobs() {
+        return config.getBoolean("entity_cleanup.cleanupPassiveMobs", false);
+    }
     
     // 清理阈值设置
-    public static final IntValue MAX_ITEMS_PER_CHUNK;
-    public static final IntValue MAX_ENTITIES_PER_CHUNK;
-    public static final IntValue ITEM_AGE_THRESHOLD;
+    public int getMaxItemsPerChunk() {
+        return config.getInt("thresholds.maxItemsPerChunk", 50);
+    }
+    
+    public int getMaxEntitiesPerChunk() {
+        return config.getInt("thresholds.maxEntitiesPerChunk", 100);
+    }
+    
+    public int getItemAgeThreshold() {
+        return config.getInt("thresholds.itemAgeThreshold", 300);
+    }
     
     // 性能设置
-    public static final BooleanValue ASYNC_CLEANUP;
-    public static final IntValue MAX_CHUNKS_PER_TICK;
+    public boolean isAsyncCleanup() {
+        return config.getBoolean("performance.asyncCleanup", true);
+    }
+    
+    public int getMaxChunksPerTick() {
+        return config.getInt("performance.maxChunksPerTick", 5);
+    }
+    
+    public int getBatchSize() {
+        return config.getInt("performance.batchSize", 100);
+    }
+    
+    public int getBatchDelay() {
+        return config.getInt("performance.batchDelay", 10);
+    }
+    
+    // 畜牧业管理配置
+    public boolean isLivestockDensityCheckEnabled() {
+        return config.getBoolean("livestock.enableDensityCheck", true);
+    }
+    
+    public int getMaxAnimalsPerChunk() {
+        return config.getInt("livestock.maxAnimalsPerChunk", 20);
+    }
+    
+    public int getWarningTime() {
+        return config.getInt("livestock.warningTime", 5);
+    }
+    
+    public boolean isWarningEnabled() {
+        return config.getBoolean("livestock.enableWarning", true);
+    }
+    
+    // 全局设置
+    public boolean isPluginEnabled() {
+        return config.getBoolean("global.enabled", false);
+    }
+    
+    public boolean isDebugMode() {
+        return config.getBoolean("global.debug", false);
+    }
     
     // 消息设置
-    public static final BooleanValue BROADCAST_CLEANUP;
-    public static final BooleanValue SHOW_CLEANUP_STATS;
+    public boolean isBroadcastCleanup() {
+        return config.getBoolean("messages.broadcastCleanup", true);
+    }
     
-    static {
-        BUILDER.comment("Aris Sweeping Configuration").push("general");
-        
-        CLEANUP_INTERVAL = BUILDER
-                .comment("清理间隔（秒）")
-                .defineInRange("cleanupInterval", 300, 30, 3600);
-        
-        BUILDER.pop().push("entity_cleanup");
-        
-        CLEANUP_ITEMS = BUILDER
-                .comment("是否清理掉落物")
-                .define("cleanupItems", true);
-        
-        CLEANUP_EXPERIENCE_ORBS = BUILDER
-                .comment("是否清理经验球")
-                .define("cleanupExperienceOrbs", true);
-        
-        CLEANUP_ARROWS = BUILDER
-                .comment("是否清理箭矢")
-                .define("cleanupArrows", true);
-        
-        CLEANUP_HOSTILE_MOBS = BUILDER
-                .comment("是否清理敌对生物")
-                .define("cleanupHostileMobs", false);
-        
-        CLEANUP_PASSIVE_MOBS = BUILDER
-                .comment("是否清理被动生物")
-                .define("cleanupPassiveMobs", false);
-        
-        BUILDER.pop().push("thresholds");
-        
-        MAX_ITEMS_PER_CHUNK = BUILDER
-                .comment("每个区块最大物品数量")
-                .defineInRange("maxItemsPerChunk", 50, 10, 500);
-        
-        MAX_ENTITIES_PER_CHUNK = BUILDER
-                .comment("每个区块最大实体数量")
-                .defineInRange("maxEntitiesPerChunk", 100, 20, 1000);
-        
-        ITEM_AGE_THRESHOLD = BUILDER
-                .comment("物品存在时间阈值（秒）")
-                .defineInRange("itemAgeThreshold", 300, 60, 1800);
-        
-        BUILDER.pop().push("performance");
-        
-        ASYNC_CLEANUP = BUILDER
-                .comment("是否使用异步清理")
-                .define("asyncCleanup", true);
-        
-        MAX_CHUNKS_PER_TICK = BUILDER
-                .comment("每tick处理的最大区块数")
-                .defineInRange("maxChunksPerTick", 5, 1, 20);
-        
-        BUILDER.pop().push("messages");
-        
-        BROADCAST_CLEANUP = BUILDER
-                .comment("是否广播清理消息")
-                .define("broadcastCleanup", true);
-        
-        SHOW_CLEANUP_STATS = BUILDER
-                .comment("是否显示清理统计")
-                .define("showCleanupStats", true);
-        
-        BUILDER.pop();
-        SPEC = BUILDER.build();
+    public boolean isShowCleanupStats() {
+        return config.getBoolean("messages.showCleanupStats", true);
+    }
+    
+    // 配置文件访问方法
+    public FileConfiguration getConfig() {
+        return config;
+    }
+    
+    public void saveConfig() {
+        plugin.saveConfig();
     }
 }

@@ -1,0 +1,67 @@
+# Aris Sweeping (女仆爱丽丝) 插件配置文件
+# 一个高性能的Minecraft 1.20.1服务端实体清理插件
+
+# 基础设置
+general:
+  # 清理间隔（秒）- 50人服务器建议300-600秒
+  cleanupInterval: 300
+
+# 实体清理设置
+entity_cleanup:
+  # 是否清理掉落物
+  cleanupItems: true
+  # 是否清理经验球
+  cleanupExperienceOrbs: true
+  # 是否清理箭矢
+  cleanupArrows: true
+  # 是否清理凋落物（掉落的方块）
+  cleanupFallingBlocks: true
+  # 是否清理敌对生物（启用时只清理50%，保持生态平衡）
+  cleanupHostileMobs: false
+  # 是否清理被动生物（建议保持false，保护动物）
+  cleanupPassiveMobs: false
+
+# 清理阈值设置 - 针对50人服务器优化
+thresholds:
+  # 每个区块最大物品数量（50人服务器建议30-50）
+  maxItemsPerChunk: 40
+  # 每个区块最大实体数量（50人服务器建议80-120）
+  maxEntitiesPerChunk: 100
+  # 物品存在时间阈值（秒）- 50人服务器建议240-360秒
+  itemAgeThreshold: 300
+
+# 畜牧业管理设置
+livestock:
+  # 是否启用畜牧业密度检测
+  enableDensityCheck: true
+  # 每个区块最大动物数量
+  maxAnimalsPerChunk: 20
+  # 预警时间（分钟）- 清理前提前通知
+  warningTime: 5
+  # 是否启用预警广播
+  enableWarning: true
+
+# 性能设置 - 50人服务器性能优化
+performance:
+  # 是否使用异步清理（强烈建议开启以避免卡顿）
+  asyncCleanup: true
+  # 每tick处理的最大区块数（50人服务器建议3-8）
+  maxChunksPerTick: 5
+  # 分批处理大小（每批处理的实体数量）
+  batchSize: 100
+  # 批次间延迟（毫秒）- 减少服务器压力
+  batchDelay: 10
+
+# 消息设置
+messages:
+  # 是否广播清理消息
+  broadcastCleanup: true
+  # 是否显示详细清理统计
+  showCleanupStats: true
+
+# 全局设置
+global:
+  # 插件总开关 - 控制所有自动清理功能 (默认关闭，需要手动启用)
+  enabled: false
+  # 调试模式 - 输出详细日志信息
+  debug: false

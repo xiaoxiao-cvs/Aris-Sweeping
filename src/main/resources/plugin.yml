@@ -1,0 +1,29 @@
+name: ArisSweeping
+version: ${version}
+main: com.xiaoxiao.arissweeping.ArisSweeping
+api-version: 1.20
+author: xiaoxiao
+description: 女仆爱丽丝 - 高性能Minecraft服务端实体清理插件
+website: https://github.com/xiaoxiao-cvs/Aris-Sweeping
+
+commands:
+  arissweeping:
+    description: Aris Sweeping插件主命令
+    usage: /arissweeping <cleanup|stats|config|help>
+    aliases: [as, sweep]
+    permission: arissweeping.admin
+    permission-message: §c你没有权限使用此命令！
+
+permissions:
+  arissweeping.admin:
+    description: 管理员权限，可以使用所有命令
+    default: op
+  arissweeping.cleanup:
+    description: 执行清理命令的权限
+    default: op
+  arissweeping.stats:
+    description: 查看统计信息的权限
+    default: op
+  arissweeping.config:
+    description: 修改配置的权限
+    default: op

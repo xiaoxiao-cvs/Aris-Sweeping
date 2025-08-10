@@ -1,4 +1,164 @@
-# Aris Sweeping (爱丽丝扫地)
+# 🧹 Aris-Sweeping - 爱丽丝清理系统
+
+一个功能强大的Minecraft服务器实体清理和管理插件，由可爱的爱丽丝为您提供服务！
+
+## ✨ 主要功能
+
+### 🎯 智能实体清理
+- **掉落物清理**: 自动清理服务器中的掉落物品，防止物品堆积影响性能
+- **凋落物清理**: 清理掉落的方块实体（如沙子、砂砾等），避免卡顿
+- **箭矢清理**: 移除射出的箭矢，减少实体数量
+- **敌对生物清理**: 智能清理50%的敌对生物，保持生态平衡
+- **经验球清理**: 清理多余的经验球实体
+
+### 🐄 畜牧业管理系统
+- **密度检测**: 实时监控每个区块的动物数量
+- **智能预警**: 超标前5分钟全屏提醒玩家
+- **保护机制**: 自动保护有名字的宠物和重要动物
+- **区块限制**: 可配置每个区块的最大动物数量
+
+### 🛡️ 特殊实体保护
+- **矿车保护**: 不清理各种类型的矿车（包括箱子矿车）
+- **船只保护**: 保护所有类型的船只
+- **装饰保护**: 保护盔甲架、物品展示框、画等装饰实体
+- **动物保护**: 默认不清理被动生物，保护玩家的牲畜
+
+### ⚙️ 完整配置系统
+- **全局开关**: 一键启用/禁用所有自动清理功能
+- **细粒度控制**: 独立控制每种实体类型的清理
+- **实时配置**: 无需重启服务器即可修改配置
+- **配置查看**: 随时查看当前所有配置状态
+
+## 🚀 快速开始
+
+### 安装
+1. 下载最新版本的 `aris-sweeping-1.0.0.jar`
+2. 将文件放入服务器的 `plugins` 文件夹
+3. 重启服务器
+4. 使用 `/arissweeping toggle` 启用插件
+
+### 基础使用
+```
+# 启用插件（默认为关闭状态）
+/arissweeping toggle
+
+# 查看帮助
+/arissweeping help
+
+# 立即执行清理
+/arissweeping clean
+
+# 查看统计信息
+/arissweeping stats
+
+# 查看当前配置
+/arissweeping config list
+```
+
+## 📋 指令大全
+
+### 基础指令
+- `/arissweeping help` - 显示帮助信息
+- `/arissweeping toggle` - 快速切换插件开关
+- `/arissweeping clean` - 立即执行标准清理
+- `/arissweeping stats` - 查看详细统计信息
+
+### 清理指令
+- `/arissweeping cleanup` - 执行标准清理
+- `/arissweeping cleanup items` - 仅清理掉落物
+- `/arissweeping cleanup mobs` - 仅清理敌对生物
+- `/arissweeping cleanup all` - 强制清理所有实体
+
+### 配置指令
+- `/arissweeping config help` - 配置指令帮助
+- `/arissweeping config list` - 查看当前配置
+- `/arissweeping config enable <true|false>` - 插件总开关
+- `/arissweeping config interval <秒>` - 设置清理间隔
+- `/arissweeping config reload` - 重新加载配置
+
+### 清理功能配置
+- `/arissweeping config cleanup-items <true|false>` - 掉落物清理
+- `/arissweeping config cleanup-mobs <true|false>` - 敌对生物清理
+- `/arissweeping config cleanup-animals <true|false>` - 被动生物清理
+- `/arissweeping config cleanup-arrows <true|false>` - 箭矢清理
+- `/arissweeping config cleanup-falling <true|false>` - 凋落物清理
+
+### 畜牧业管理配置
+- `/arissweeping config livestock-check <true|false>` - 密度检测开关
+- `/arissweeping config livestock-limit <数量>` - 每区块最大动物数
+- `/arissweeping config warning-time <分钟>` - 预警时间设置
+
+### 其他配置
+- `/arissweeping config broadcast <true|false>` - 清理消息广播
+- `/arissweeping config show-stats <true|false>` - 详细统计显示
+
+## 🔧 配置文件说明
+
+### 重要概念区分
+
+**掉落物 (Items)** vs **凋落物 (Falling Blocks)**:
+- **掉落物**: 玩家丢弃或生物死亡掉落的物品实体，如钻石、食物、工具等
+- **凋落物**: 受重力影响掉落的方块实体，如沙子、砂砾、铁砧等
+
+两者是完全不同的实体类型，需要分别配置清理规则。
+
+### 默认配置
+```yaml
+# 全局设置
+global:
+  enabled: false  # 默认关闭，需要手动启用
+  debug: false
+
+# 实体清理设置
+entity_cleanup:
+  cleanupItems: true              # 清理掉落物
+  cleanupExperienceOrbs: true     # 清理经验球
+  cleanupArrows: true             # 清理箭矢
+  cleanupFallingBlocks: true      # 清理凋落物
+  cleanupHostileMobs: false       # 敌对生物清理（50%概率）
+  cleanupPassiveMobs: false       # 被动生物清理（建议保持关闭）
+
+# 畜牧业管理
+livestock:
+  enableDensityCheck: true        # 启用密度检测
+  maxAnimalsPerChunk: 20          # 每区块最大动物数
+  warningTime: 5                  # 预警时间（分钟）
+  enableWarning: true             # 启用预警广播
+```
+
+## 🎯 性能优化
+
+- **异步处理**: 支持异步清理，不影响主线程性能
+- **批量处理**: 分批处理大量实体，避免服务器卡顿
+- **智能检测**: 只在必要时执行清理，减少资源消耗
+- **区块优化**: 按区块分组处理，提高清理效率
+
+## 🛠️ 开发信息
+
+- **版本**: 1.0.0
+- **兼容性**: Minecraft 1.16+
+- **依赖**: Bukkit/Spigot/Paper
+- **语言**: Java 8+
+
+## 📝 更新日志
+
+### v1.0.0
+- ✅ 基础实体清理功能
+- ✅ 智能实体保护机制
+- ✅ 畜牧业密度管理系统
+- ✅ 完整的配置指令系统
+- ✅ 美化的用户界面
+- ✅ 全局开关控制
+- ✅ 凋落物清理功能
+- ✅ 性能优化和异步处理
+
+## 💝 特别感谢
+
+感谢所有为这个项目提供建议和反馈的服务器管理员和玩家们！
+
+---
+
+**由爱丽丝为您提供清理服务 💖**
 
 一个高性能的Minecraft 1.20.1 Forge服务端实体清理插件，以《蔚蓝档案》中的爱丽丝角色命名。
 
