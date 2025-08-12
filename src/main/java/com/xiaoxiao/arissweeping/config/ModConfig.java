@@ -14,232 +14,1258 @@ public class ModConfig {
     }
     
     private void loadDefaults() {
-        // 基础设置
-        config.addDefault("general.cleanupInterval", 300);
-        
-        // 实体清理设置
-        config.addDefault("entity_cleanup.cleanupItems", true);
-        config.addDefault("entity_cleanup.cleanupExperienceOrbs", true);
-        config.addDefault("entity_cleanup.cleanupArrows", true);
-        config.addDefault("entity_cleanup.cleanupFallingBlocks", true);
-        config.addDefault("entity_cleanup.cleanupHostileMobs", false);
-        config.addDefault("entity_cleanup.cleanupPassiveMobs", false);
-        
-        // 清理阈值设置
-        config.addDefault("thresholds.maxItemsPerChunk", 50);
-        config.addDefault("thresholds.maxEntitiesPerChunk", 100);
-        config.addDefault("thresholds.itemAgeThreshold", 60);
-        
-        // 性能设置
-        config.addDefault("performance.asyncCleanup", true);
-        config.addDefault("performance.maxChunksPerTick", 5);
-        
-        // 消息设置
-        config.addDefault("messages.broadcastCleanup", true);
-        config.addDefault("messages.showCleanupStats", true);
-        
-        // 畜牧业管理设置
-        config.addDefault("livestock.enableDensityCheck", true);
-        config.addDefault("livestock.maxAnimalsPerChunk", 20);
-        config.addDefault("livestock.warningTime", 5);
-        config.addDefault("livestock.enableWarning", true);
-        
-        // 实体密度设置
-        config.addDefault("entity_density.threshold", 500);
-        
-        // TPS监控设置
-        config.addDefault("tps_monitor.enabled", true);
-        config.addDefault("tps_monitor.lowTpsThreshold", 17.0);
-        config.addDefault("tps_monitor.emergencyCleanup", true);
-        
-        // 聚集清理设置
-        config.addDefault("cluster_cleanup.enabled", true);
-        config.addDefault("cluster_cleanup.detectionDistance", 3.0);
-        config.addDefault("cluster_cleanup.minClusterSize", 5);
-        config.addDefault("cluster_cleanup.preserveRatio", 0.3);
-        config.addDefault("cluster_cleanup.onlyCountSameType", true);
-        
-        // 智能清理设置
-        config.addDefault("smart_cleanup.protectNamedEntities", true);
-        config.addDefault("smart_cleanup.protectLeashedEntities", true);
-        config.addDefault("smart_cleanup.protectRiddenEntities", true);
-        config.addDefault("smart_cleanup.spawnReasonFilter", false);
-        
-        // 全局设置
-        config.addDefault("global.enabled", false);
-        config.addDefault("global.debug", false);
-        
-        config.options().copyDefaults(true);
-        plugin.saveConfig();
+        try {
+            // 基础设置
+            config.addDefault("general.cleanupInterval", 300);
+            
+            // 实体清理设置
+            config.addDefault("entity_cleanup.cleanupItems", true);
+            config.addDefault("entity_cleanup.cleanupExperienceOrbs", true);
+            config.addDefault("entity_cleanup.cleanupArrows", true);
+            config.addDefault("entity_cleanup.cleanupFallingBlocks", true);
+            config.addDefault("entity_cleanup.cleanupHostileMobs", false);
+            config.addDefault("entity_cleanup.cleanupPassiveMobs", false);
+            
+            // 清理阈值设置
+            config.addDefault("thresholds.maxItemsPerChunk", 50);
+            config.addDefault("thresholds.maxEntitiesPerChunk", 100);
+            config.addDefault("thresholds.itemAgeThreshold", 60);
+            
+            // 实体最小年龄设置
+            config.addDefault("entity_age.itemMinAge", 100);
+            config.addDefault("entity_age.experienceOrbMinAge", 100);
+            config.addDefault("entity_age.arrowMinAge", 100);
+            
+            // 性能设置
+            config.addDefault("performance.asyncCleanup", true);
+            config.addDefault("performance.maxChunksPerTick", 5);
+            config.addDefault("performance.batchSize", 100);
+            config.addDefault("performance.batchDelay", 10);
+            
+            // 消息设置
+            config.addDefault("messages.broadcastCleanup", true);
+            config.addDefault("messages.showCleanupStats", true);
+            
+            // 畜牧业管理设置
+            config.addDefault("livestock.enableDensityCheck", true);
+            config.addDefault("livestock.maxAnimalsPerChunk", 20);
+            config.addDefault("livestock.warningTime", 5);
+            config.addDefault("livestock.enableWarning", true);
+            
+            // 区域解析功能设置
+            config.addDefault("livestock.regions.enabled", true);
+            config.addDefault("livestock.regions.playerTitle", "老师");
+            
+            // 默认区域配置示例
+            config.addDefault("livestock.regions.areas.example.name", "示例学院自管区");
+            config.addDefault("livestock.regions.areas.example.world", "world");
+            config.addDefault("livestock.regions.areas.example.x1", -1000);
+            config.addDefault("livestock.regions.areas.example.z1", -1000);
+            config.addDefault("livestock.regions.areas.example.x2", 1000);
+            config.addDefault("livestock.regions.areas.example.z2", 1000);
+            
+            // 中文生物名称映射
+            config.addDefault("livestock.animalNames.COW", "牛");
+            config.addDefault("livestock.animalNames.PIG", "猪");
+            config.addDefault("livestock.animalNames.SHEEP", "羊");
+            config.addDefault("livestock.animalNames.CHICKEN", "鸡");
+            config.addDefault("livestock.animalNames.HORSE", "马");
+            config.addDefault("livestock.animalNames.DONKEY", "驴");
+            config.addDefault("livestock.animalNames.MULE", "骡子");
+            config.addDefault("livestock.animalNames.LLAMA", "羊驼");
+            config.addDefault("livestock.animalNames.RABBIT", "兔子");
+            config.addDefault("livestock.animalNames.WOLF", "狼");
+            config.addDefault("livestock.animalNames.CAT", "猫");
+            config.addDefault("livestock.animalNames.PARROT", "鹦鹉");
+            config.addDefault("livestock.animalNames.BEE", "蜜蜂");
+            config.addDefault("livestock.animalNames.FOX", "狐狸");
+            config.addDefault("livestock.animalNames.PANDA", "熊猫");
+            config.addDefault("livestock.animalNames.POLAR_BEAR", "北极熊");
+            config.addDefault("livestock.animalNames.TURTLE", "海龟");
+            config.addDefault("livestock.animalNames.OCELOT", "豹猫");
+            config.addDefault("livestock.animalNames.MUSHROOM_COW", "哞菇");
+            config.addDefault("livestock.animalNames.GOAT", "山羊");
+            config.addDefault("livestock.animalNames.AXOLOTL", "美西螈");
+            config.addDefault("livestock.animalNames.GLOW_SQUID", "发光鱿鱼");
+            config.addDefault("livestock.animalNames.SQUID", "鱿鱼");
+            config.addDefault("livestock.animalNames.BAT", "蝙蝠");
+            config.addDefault("livestock.animalNames.VILLAGER", "村民");
+            config.addDefault("livestock.animalNames.WANDERING_TRADER", "流浪商人");
+            config.addDefault("livestock.animalNames.IRON_GOLEM", "铁傀儡");
+            config.addDefault("livestock.animalNames.SNOW_GOLEM", "雪傀儡");
+            config.addDefault("livestock.animalNames.ALLAY", "悦灵");
+            config.addDefault("livestock.animalNames.FROG", "青蛙");
+            config.addDefault("livestock.animalNames.TADPOLE", "蝌蚪");
+            config.addDefault("livestock.animalNames.CAMEL", "骆驼");
+            config.addDefault("livestock.animalNames.SNIFFER", "嗅探兽");
+            config.addDefault("livestock.animalNames.ARMADILLO", "犰狳");
+            
+            // 实体密度设置
+            config.addDefault("entity_density.threshold", 1500);
+            
+            // TPS监控设置
+            config.addDefault("tps_monitor.enabled", true);
+            config.addDefault("tps_monitor.lowTpsThreshold", 17.0);
+            config.addDefault("tps_monitor.emergencyCleanup", true);
+            
+            // 聚集清理设置
+            config.addDefault("cluster_cleanup.enabled", true);
+            config.addDefault("cluster_cleanup.detectionDistance", 3.0);
+            config.addDefault("cluster_cleanup.minClusterSize", 5);
+            config.addDefault("cluster_cleanup.preserveRatio", 0.3);
+            config.addDefault("cluster_cleanup.onlyCountSameType", true);
+            
+            // 智能清理设置
+            config.addDefault("smart_cleanup.enabled", true);
+            config.addDefault("smart_cleanup.interval", 60);
+            config.addDefault("smart_cleanup.protectNamedEntities", true);
+            config.addDefault("smart_cleanup.protectLeashedEntities", true);
+            config.addDefault("smart_cleanup.protectRiddenEntities", true);
+            config.addDefault("smart_cleanup.spawnReasonFilter", false);
+            
+            // 畜牧业监控设置
+            config.addDefault("livestock.checkInterval", 300);
+            
+            // 全局设置
+            config.addDefault("global.enabled", false);
+            config.addDefault("global.debug", false);
+            
+            config.options().copyDefaults(true);
+            plugin.saveConfig();
+            
+            plugin.getLogger().info("配置默认值加载成功");
+        } catch (Exception e) {
+            plugin.getLogger().severe("加载配置默认值时发生错误: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
     
     public void reload() {
-        plugin.reloadConfig();
-        this.config = plugin.getConfig();
+        try {
+            plugin.reloadConfig();
+            this.config = plugin.getConfig();
+            
+            // 验证配置文件
+            validateConfigurationAndNotify();
+            
+            plugin.getLogger().info("配置文件重新加载成功");
+        } catch (Exception e) {
+            plugin.getLogger().severe("重新加载配置文件时发生错误: " + e.getMessage());
+            e.printStackTrace();
+            
+            // 向管理员公屏通知配置错误
+            notifyConfigError("配置文件重新加载失败: " + e.getMessage());
+        }
     }
     
     // 基础设置
     public int getCleanupInterval() {
-        return config.getInt("general.cleanupInterval", 300);
+        try {
+            int interval = config.getInt("general.cleanupInterval", 300);
+            return Math.max(interval, 10); // 确保最小值为10秒
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取清理间隔配置时发生错误，使用默认值: " + e.getMessage());
+            return 300;
+        }
     }
     
     public void setCleanupInterval(int interval) {
-        config.set("general.cleanupInterval", interval);
-        plugin.saveConfig();
+        try {
+            config.set("general.cleanupInterval", interval);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存清理间隔配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    // 实体清理设置的setter方法
+    public void setCleanupItems(boolean enabled) {
+        try {
+            config.set("entity_cleanup.cleanupItems", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存物品清理配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setCleanupExperienceOrbs(boolean enabled) {
+        try {
+            config.set("entity_cleanup.cleanupExperienceOrbs", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存经验球清理配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setCleanupArrows(boolean enabled) {
+        try {
+            config.set("entity_cleanup.cleanupArrows", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存箭矢清理配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setCleanupFallingBlocks(boolean enabled) {
+        try {
+            config.set("entity_cleanup.cleanupFallingBlocks", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存掉落方块清理配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setCleanupHostileMobs(boolean enabled) {
+        try {
+            config.set("entity_cleanup.cleanupHostileMobs", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存敌对生物清理配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setCleanupPassiveMobs(boolean enabled) {
+        try {
+            config.set("entity_cleanup.cleanupPassiveMobs", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存被动生物清理配置时发生错误: " + e.getMessage());
+        }
     }
     
     // 实体清理设置
     public boolean isCleanupItems() {
-        return config.getBoolean("entity_cleanup.cleanupItems", true);
+        try {
+            return config.getBoolean("entity_cleanup.cleanupItems", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取物品清理配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
     }
     
     public boolean isCleanupExperienceOrbs() {
-        return config.getBoolean("entity_cleanup.cleanupExperienceOrbs", true);
+        try {
+            return config.getBoolean("entity_cleanup.cleanupExperienceOrbs", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取经验球清理配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
     }
     
     public boolean isCleanupArrows() {
-        return config.getBoolean("entity_cleanup.cleanupArrows", true);
+        try {
+            return config.getBoolean("entity_cleanup.cleanupArrows", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取箭矢清理配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
     }
     
     public boolean isCleanupFallingBlocks() {
-        return config.getBoolean("entity_cleanup.cleanupFallingBlocks", true);
+        try {
+            return config.getBoolean("entity_cleanup.cleanupFallingBlocks", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取掉落方块清理配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
     }
     
     public boolean isCleanupHostileMobs() {
-        return config.getBoolean("entity_cleanup.cleanupHostileMobs", false);
+        try {
+            return config.getBoolean("entity_cleanup.cleanupHostileMobs", false);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取敌对生物清理配置时发生错误，使用默认值: " + e.getMessage());
+            return false;
+        }
     }
     
     public boolean isCleanupPassiveMobs() {
-        return config.getBoolean("entity_cleanup.cleanupPassiveMobs", false);
+        try {
+            return config.getBoolean("entity_cleanup.cleanupPassiveMobs", false);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取被动生物清理配置时发生错误，使用默认值: " + e.getMessage());
+            return false;
+        }
     }
     
     // 清理阈值设置
     public int getMaxItemsPerChunk() {
-        return config.getInt("thresholds.maxItemsPerChunk", 50);
+        try {
+            int value = config.getInt("thresholds.maxItemsPerChunk", 50);
+            return Math.max(value, 1); // 确保最小值为1
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取每区块最大物品数配置时发生错误，使用默认值: " + e.getMessage());
+            return 50;
+        }
     }
     
     public int getMaxEntitiesPerChunk() {
-        return config.getInt("thresholds.maxEntitiesPerChunk", 100);
+        try {
+            int value = config.getInt("thresholds.maxEntitiesPerChunk", 100);
+            return Math.max(value, 1); // 确保最小值为1
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取每区块最大实体数配置时发生错误，使用默认值: " + e.getMessage());
+            return 100;
+        }
     }
     
     public int getItemAgeThreshold() {
-        return config.getInt("thresholds.itemAgeThreshold", 60);
+        try {
+            int value = config.getInt("thresholds.itemAgeThreshold", 60);
+            return Math.max(value, 10); // 确保最小值为10秒
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取物品年龄阈值配置时发生错误，使用默认值: " + e.getMessage());
+            return 60;
+        }
+    }
+    
+    // 清理阈值设置的setter方法
+    public void setMaxItemsPerChunk(int value) {
+        try {
+            config.set("thresholds.maxItemsPerChunk", value);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存每区块最大物品数配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setMaxEntitiesPerChunk(int value) {
+        try {
+            config.set("thresholds.maxEntitiesPerChunk", value);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存每区块最大实体数配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setItemAgeThreshold(int value) {
+        try {
+            config.set("thresholds.itemAgeThreshold", value);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存物品年龄阈值配置时发生错误: " + e.getMessage());
+        }
     }
     
     // 性能设置
     public boolean isAsyncCleanup() {
-        return config.getBoolean("performance.asyncCleanup", true);
+        try {
+            return config.getBoolean("performance.asyncCleanup", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取异步清理配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
     }
     
     public int getMaxChunksPerTick() {
-        return config.getInt("performance.maxChunksPerTick", 5);
+        try {
+            int value = config.getInt("performance.maxChunksPerTick", 5);
+            return Math.max(value, 1); // 确保最小值为1
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取每tick最大区块数配置时发生错误，使用默认值: " + e.getMessage());
+            return 5;
+        }
     }
     
     public int getBatchSize() {
-        return config.getInt("performance.batchSize", 100);
+        try {
+            int value = config.getInt("performance.batchSize", 100);
+            return Math.max(value, 1); // 确保最小值为1
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取批处理大小配置时发生错误，使用默认值: " + e.getMessage());
+            return 100;
+        }
     }
     
     public int getBatchDelay() {
-        return config.getInt("performance.batchDelay", 10);
+        try {
+            int value = config.getInt("performance.batchDelay", 10);
+            return Math.max(value, 0); // 确保最小值为0
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取批处理延迟配置时发生错误，使用默认值: " + e.getMessage());
+            return 10;
+        }
+    }
+    
+    // 性能设置的setter方法
+    public void setAsyncCleanup(boolean enabled) {
+        try {
+            config.set("performance.asyncCleanup", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存异步清理配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setMaxChunksPerTick(int value) {
+        try {
+            config.set("performance.maxChunksPerTick", value);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存每tick最大区块数配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setBatchSize(int value) {
+        try {
+            config.set("performance.batchSize", value);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存批处理大小配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setBatchDelay(int value) {
+        try {
+            config.set("performance.batchDelay", value);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存批处理延迟配置时发生错误: " + e.getMessage());
+        }
     }
     
     // 畜牧业管理配置
     public boolean isLivestockDensityCheckEnabled() {
-        return config.getBoolean("livestock.enableDensityCheck", true);
+        try {
+            return config.getBoolean("livestock.enableDensityCheck", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取畜牧业密度检查配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
     }
     
     public int getMaxAnimalsPerChunk() {
-        return config.getInt("livestock.maxAnimalsPerChunk", 20);
+        try {
+            int value = config.getInt("livestock.maxAnimalsPerChunk", 20);
+            return Math.max(value, 1); // 确保最小值为1
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取每区块最大动物数配置时发生错误，使用默认值: " + e.getMessage());
+            return 20;
+        }
     }
     
     public int getWarningTime() {
-        return config.getInt("livestock.warningTime", 5);
+        try {
+            int value = config.getInt("livestock.warningTime", 5);
+            return Math.max(value, 1); // 确保最小值为1分钟
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取预警时间配置时发生错误，使用默认值: " + e.getMessage());
+            return 5;
+        }
     }
     
     public boolean isWarningEnabled() {
-        return config.getBoolean("livestock.enableWarning", true);
+        try {
+            return config.getBoolean("livestock.enableWarning", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取预警启用配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
+    }
+    
+    public int getWarningCooldown() {
+        try {
+            int value = config.getInt("livestock.warningCooldown", 60);
+            return Math.max(value, 10); // 确保最小值为10秒
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取警告冷却时间配置时发生错误，使用默认值: " + e.getMessage());
+            return 60;
+        }
+    }
+    
+    // 区域解析功能配置
+    public boolean isRegionParsingEnabled() {
+        try {
+            return config.getBoolean("livestock.regions.enabled", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取区域解析功能配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
+    }
+    
+    public String getPlayerTitle() {
+        try {
+            return config.getString("livestock.regions.playerTitle", "老师");
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取玩家称呼配置时发生错误，使用默认值: " + e.getMessage());
+            return "老师";
+        }
+    }
+    
+    public String getChineseAnimalName(String entityType) {
+        try {
+            return config.getString("livestock.animalNames." + entityType, entityType);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取中文动物名称时发生错误，使用英文名: " + e.getMessage());
+            return entityType;
+        }
+    }
+    
+    public java.util.Set<String> getRegionKeys() {
+        try {
+            org.bukkit.configuration.ConfigurationSection regionsSection = config.getConfigurationSection("livestock.regions.areas");
+            if (regionsSection != null) {
+                return regionsSection.getKeys(false);
+            }
+            return new java.util.HashSet<>();
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取区域配置键时发生错误: " + e.getMessage());
+            return new java.util.HashSet<>();
+        }
+    }
+    
+    public String getRegionName(String regionKey) {
+        try {
+            return config.getString("livestock.regions.areas." + regionKey + ".name", regionKey);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取区域名称时发生错误，使用键名: " + e.getMessage());
+            return regionKey;
+        }
+    }
+    
+    public String getRegionWorld(String regionKey) {
+        try {
+            return config.getString("livestock.regions.areas." + regionKey + ".world", "world");
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取区域世界时发生错误，使用默认值: " + e.getMessage());
+            return "world";
+        }
+    }
+    
+    public int getRegionX1(String regionKey) {
+        try {
+            return config.getInt("livestock.regions.areas." + regionKey + ".x1", 0);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取区域X1坐标时发生错误，使用默认值: " + e.getMessage());
+            return 0;
+        }
+    }
+    
+    public int getRegionZ1(String regionKey) {
+        try {
+            return config.getInt("livestock.regions.areas." + regionKey + ".z1", 0);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取区域Z1坐标时发生错误，使用默认值: " + e.getMessage());
+            return 0;
+        }
+    }
+    
+    public int getRegionX2(String regionKey) {
+        try {
+            return config.getInt("livestock.regions.areas." + regionKey + ".x2", 0);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取区域X2坐标时发生错误，使用默认值: " + e.getMessage());
+            return 0;
+        }
+    }
+    
+    public int getRegionZ2(String regionKey) {
+        try {
+            return config.getInt("livestock.regions.areas." + regionKey + ".z2", 0);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取区域Z2坐标时发生错误，使用默认值: " + e.getMessage());
+            return 0;
+        }
+    }
+    
+    // 畜牧业管理配置的setter方法
+    public void setLivestockDensityCheckEnabled(boolean enabled) {
+        try {
+            config.set("livestock.enableDensityCheck", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存畜牧业密度检查配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setMaxAnimalsPerChunk(int value) {
+        try {
+            config.set("livestock.maxAnimalsPerChunk", value);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存每区块最大动物数配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setWarningTime(int value) {
+        try {
+            config.set("livestock.warningTime", value);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存预警时间配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setWarningEnabled(boolean enabled) {
+        try {
+            config.set("livestock.enableWarning", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存预警启用配置时发生错误: " + e.getMessage());
+        }
     }
     
     // 全局设置
     public boolean isPluginEnabled() {
-        return config.getBoolean("global.enabled", false);
+        try {
+            return config.getBoolean("global.enabled", false);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取插件启用状态配置时发生错误，使用默认值: " + e.getMessage());
+            return false;
+        }
     }
     
     public boolean isDebugMode() {
-        return config.getBoolean("global.debug", false);
+        try {
+            return config.getBoolean("global.debug", false);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取调试模式配置时发生错误，使用默认值: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    // 全局设置的setter方法
+    public void setPluginEnabled(boolean enabled) {
+        try {
+            config.set("global.enabled", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存插件启用状态配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setDebugMode(boolean enabled) {
+        try {
+            config.set("global.debug", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存调试模式配置时发生错误: " + e.getMessage());
+        }
     }
     
     // 消息设置
     public boolean isBroadcastCleanup() {
-        return config.getBoolean("messages.broadcastCleanup", true);
+        try {
+            return config.getBoolean("messages.broadcastCleanup", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取清理消息广播配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
     }
     
     public boolean isShowCleanupStats() {
-        return config.getBoolean("messages.showCleanupStats", true);
+        try {
+            return config.getBoolean("messages.showCleanupStats", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取清理统计显示配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
+    }
+    
+    // 消息设置的setter方法
+    public void setBroadcastCleanup(boolean enabled) {
+        try {
+            config.set("messages.broadcastCleanup", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存清理消息广播配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setShowCleanupStats(boolean enabled) {
+        try {
+            config.set("messages.showCleanupStats", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存清理统计显示配置时发生错误: " + e.getMessage());
+        }
     }
     
     // TPS监控配置
     public boolean isTpsMonitorEnabled() {
-        return config.getBoolean("tps_monitor.enabled", true);
+        try {
+            return config.getBoolean("tps_monitor.enabled", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取TPS监控启用配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
     }
     
     public double getLowTpsThreshold() {
-        return config.getDouble("tps_monitor.lowTpsThreshold", 17.0);
+        try {
+            double value = config.getDouble("tps_monitor.lowTpsThreshold", 17.0);
+            return Math.max(value, 5.0); // 确保最小值为5.0
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取低TPS阈值配置时发生错误，使用默认值: " + e.getMessage());
+            return 17.0;
+        }
     }
     
     public boolean isEmergencyCleanupEnabled() {
-        return config.getBoolean("tps_monitor.emergencyCleanup", true);
+        try {
+            return config.getBoolean("tps_monitor.emergencyCleanup", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取紧急清理启用配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
+    }
+    
+    // TPS监控配置的setter方法
+    public void setTpsMonitorEnabled(boolean enabled) {
+        try {
+            config.set("tps_monitor.enabled", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存TPS监控启用配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setLowTpsThreshold(double value) {
+        try {
+            config.set("tps_monitor.lowTpsThreshold", value);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存低TPS阈值配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public void setEmergencyCleanupEnabled(boolean enabled) {
+        try {
+            config.set("tps_monitor.emergencyCleanup", enabled);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存紧急清理启用配置时发生错误: " + e.getMessage());
+        }
     }
     
     // 聚集清理配置
     public boolean isClusterCleanupEnabled() {
-        return config.getBoolean("cluster_cleanup.enabled", true);
+        try {
+            return config.getBoolean("cluster_cleanup.enabled", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取聚集清理启用配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
     }
     
     public double getClusterDetectionDistance() {
-        return config.getDouble("cluster_cleanup.detectionDistance", 3.0);
+        try {
+            double value = config.getDouble("cluster_cleanup.detectionDistance", 3.0);
+            return Math.max(value, 1.0); // 确保最小值为1.0
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取聚集检测距离配置时发生错误，使用默认值: " + e.getMessage());
+            return 3.0;
+        }
     }
     
     public int getMinClusterSize() {
-        return config.getInt("cluster_cleanup.minClusterSize", 5);
+        try {
+            int value = config.getInt("cluster_cleanup.minClusterSize", 5);
+            return Math.max(value, 2); // 确保最小值为2
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取最小聚集大小配置时发生错误，使用默认值: " + e.getMessage());
+            return 5;
+        }
     }
     
     public double getClusterPreserveRatio() {
-        return config.getDouble("cluster_cleanup.preserveRatio", 0.3);
+        try {
+            double value = config.getDouble("cluster_cleanup.preserveRatio", 0.3);
+            return Math.max(0.0, Math.min(value, 1.0)); // 确保值在0.0-1.0之间
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取聚集保留比例配置时发生错误，使用默认值: " + e.getMessage());
+            return 0.3;
+        }
     }
     
     public boolean isOnlyCountSameType() {
-        return config.getBoolean("cluster_cleanup.onlyCountSameType", true);
+        try {
+            return config.getBoolean("cluster_cleanup.onlyCountSameType", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取同类型聚集配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
     }
     
     // 智能清理配置
+    public boolean isSmartCleanupEnabled() {
+        try {
+            return config.getBoolean("smart_cleanup.enabled", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取智能清理启用配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
+    }
+    
+    public int getSmartCleanupInterval() {
+        try {
+            int value = config.getInt("smart_cleanup.interval", 60);
+            return Math.max(value, 10); // 确保最小值为10秒
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取智能清理间隔配置时发生错误，使用默认值: " + e.getMessage());
+            return 60;
+        }
+    }
+    
+    public int getLivestockCheckInterval() {
+        try {
+            int interval = config.getInt("livestock.checkInterval", 300);
+            return Math.max(interval, 30); // 确保最小值为30秒
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取畜牧业检查间隔配置时发生错误，使用默认值: " + e.getMessage());
+            return 300;
+        }
+    }
+    
     public boolean isProtectNamedEntities() {
-        return config.getBoolean("smart_cleanup.protectNamedEntities", true);
+        try {
+            return config.getBoolean("smart_cleanup.protectNamedEntities", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取保护命名实体配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
     }
     
     public boolean isProtectLeashedEntities() {
-        return config.getBoolean("smart_cleanup.protectLeashedEntities", true);
+        try {
+            return config.getBoolean("smart_cleanup.protectLeashedEntities", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取保护拴绳实体配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
     }
     
     public boolean isProtectRiddenEntities() {
-        return config.getBoolean("smart_cleanup.protectRiddenEntities", true);
+        try {
+            return config.getBoolean("smart_cleanup.protectRiddenEntities", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取保护骑乘实体配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
     }
     
     public boolean isSpawnReasonFilterEnabled() {
-        return config.getBoolean("smart_cleanup.spawnReasonFilter", false);
+        try {
+            return config.getBoolean("smart_cleanup.spawnReasonFilter", false);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取生成原因过滤配置时发生错误，使用默认值: " + e.getMessage());
+            return false;
+        }
     }
     
     // 实体密度配置
     public int getEntityDensityThreshold() {
-        return config.getInt("entity_density.threshold", 500);
+        try {
+            int threshold = config.getInt("entity_density.threshold", 500);
+            return Math.max(threshold, 50); // 确保最小值为50
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取实体密度阈值配置时发生错误，使用默认值: " + e.getMessage());
+            return 500;
+        }
     }
     
+    // 实体密度配置的setter方法
+    public void setEntityDensityThreshold(int threshold) {
+        try {
+            config.set("entity_density.threshold", threshold);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存实体密度阈值配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    // 基础配置读取方法
+    public boolean getBoolean(String path, boolean defaultValue) {
+        return config.getBoolean(path, defaultValue);
+    }
+    
+    public int getInt(String path, int defaultValue) {
+        return config.getInt(path, defaultValue);
+    }
+    
+    public double getDouble(String path, double defaultValue) {
+        return config.getDouble(path, defaultValue);
+    }
+    
+    public String getString(String path, String defaultValue) {
+        return config.getString(path, defaultValue);
+    }
+    
+    // 实体最小年龄配置
+    public int getItemMinAge() {
+        try {
+            int value = config.getInt("entity_age.itemMinAge", 100);
+            return Math.max(value, 0); // 确保最小值为0
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取物品最小年龄配置时发生错误，使用默认值: " + e.getMessage());
+            return 100;
+        }
+    }
+    
+    public void setItemMinAge(int age) {
+        try {
+            config.set("entity_age.itemMinAge", age);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存物品最小年龄配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public int getExperienceOrbMinAge() {
+        try {
+            int value = config.getInt("entity_age.experienceOrbMinAge", 100);
+            return Math.max(value, 0); // 确保最小值为0
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取经验球最小年龄配置时发生错误，使用默认值: " + e.getMessage());
+            return 100;
+        }
+    }
+    
+    public void setExperienceOrbMinAge(int age) {
+        try {
+            config.set("entity_age.experienceOrbMinAge", age);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存经验球最小年龄配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    public int getArrowMinAge() {
+        try {
+            int value = config.getInt("entity_age.arrowMinAge", 100);
+            return Math.max(value, 0); // 确保最小值为0
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取箭矢最小年龄配置时发生错误，使用默认值: " + e.getMessage());
+            return 100;
+        }
+    }
+    
+    public void setArrowMinAge(int age) {
+        try {
+            config.set("entity_age.arrowMinAge", age);
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存箭矢最小年龄配置时发生错误: " + e.getMessage());
+        }
+    }
+    
+    // 新增TPS监控配置项
+    public int getTpsCheckInterval() {
+        try {
+            int value = config.getInt("tps_monitoring.checkInterval", 20);
+            return Math.max(value, 1); // 确保最小值为1
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取TPS检查间隔配置时发生错误，使用默认值: " + e.getMessage());
+            return 20;
+        }
+    }
+    
+    public int getConsecutiveLowTpsThreshold() {
+        try {
+            int value = config.getInt("tps_monitoring.consecutiveLowTpsThreshold", 3);
+            return Math.max(value, 1); // 确保最小值为1
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取连续低TPS阈值配置时发生错误，使用默认值: " + e.getMessage());
+            return 3;
+        }
+    }
+    
+    public double getLowTpsCleanupIntensity() {
+        try {
+            double value = config.getDouble("tps_monitoring.lowTpsCleanupIntensity", 1.5);
+            return Math.max(value, 1.0); // 确保最小值为1.0
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取低TPS清理强度配置时发生错误，使用默认值: " + e.getMessage());
+            return 1.5;
+        }
+    }
+    
+    public boolean isPrioritizeClusterCleanup() {
+        try {
+            return config.getBoolean("tps_monitoring.prioritizeClusterCleanup", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取优先聚集清理配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
+    }
+    
+    // 定时检查配置项
+    public boolean isScheduledChecksEnabled() {
+        try {
+            return config.getBoolean("scheduled_checks.enabled", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取定时检查启用配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
+    }
+    
+    public int getEntityCountCheckInterval() {
+        try {
+            int value = config.getInt("scheduled_checks.entityCountCheckInterval", 300);
+            return Math.max(value, 60); // 确保最小值为60秒
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取实体数量检查间隔配置时发生错误，使用默认值: " + e.getMessage());
+            return 300;
+        }
+    }
+    
+    public int getLivestockDensityCheckInterval() {
+        try {
+            int value = config.getInt("scheduled_checks.livestockDensityCheckInterval", 600);
+            return Math.max(value, 60); // 确保最小值为60秒
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取畜牧密度检查间隔配置时发生错误，使用默认值: " + e.getMessage());
+            return 600;
+        }
+    }
+    
+    public int getPerformanceCheckInterval() {
+        try {
+            int value = config.getInt("scheduled_checks.performanceCheckInterval", 120);
+            return Math.max(value, 30); // 确保最小值为30秒
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取性能检查间隔配置时发生错误，使用默认值: " + e.getMessage());
+            return 120;
+        }
+    }
+    
+    public boolean isLogChecks() {
+        try {
+            return config.getBoolean("scheduled_checks.logChecks", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取记录检查配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
+    }
+    
+    public int getResultRetentionTime() {
+        try {
+            int value = config.getInt("scheduled_checks.resultRetentionTime", 3600);
+            return Math.max(value, 300); // 确保最小值为300秒
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取结果保留时间配置时发生错误，使用默认值: " + e.getMessage());
+            return 3600;
+        }
+    }
+    
+    public boolean isEnableEarlyWarning() {
+        try {
+            return config.getBoolean("scheduled_checks.enableEarlyWarning", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取早期警告启用配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
+    }
+    
+    public double getEarlyWarningThreshold() {
+        try {
+            double value = config.getDouble("scheduled_checks.earlyWarningThreshold", 0.8);
+            return Math.max(0.1, Math.min(value, 1.0)); // 确保值在0.1-1.0之间
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取早期警告阈值配置时发生错误，使用默认值: " + e.getMessage());
+            return 0.8;
+        }
+    }
+
     // 配置文件访问方法
     public FileConfiguration getConfig() {
-        return config;
+        try {
+            return config;
+        } catch (Exception e) {
+            plugin.getLogger().severe("获取配置文件时发生错误: " + e.getMessage());
+            return null;
+        }
     }
     
     public void saveConfig() {
-        plugin.saveConfig();
+        try {
+            plugin.saveConfig();
+        } catch (Exception e) {
+            plugin.getLogger().severe("保存配置文件时发生错误: " + e.getMessage());
+            // 向管理员公屏通知配置保存错误
+            notifyConfigError("配置文件保存失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 重新加载配置文件
+     */
+    public void reloadConfig() {
+        plugin.reloadConfig();
+        reload();
+    }
+    
+    /**
+     * 验证配置文件并通知错误
+     */
+    private void validateConfigurationAndNotify() {
+        try {
+            StringBuilder errors = new StringBuilder();
+            boolean hasErrors = false;
+            
+            // 验证清理间隔
+            int cleanupInterval = config.getInt("general.cleanupInterval", 300);
+            if (cleanupInterval <= 0) {
+                errors.append("清理间隔必须大于0秒 (当前: ").append(cleanupInterval).append("); ");
+                hasErrors = true;
+            } else if (cleanupInterval < 10) {
+                plugin.getLogger().warning("清理间隔过短 (" + cleanupInterval + "秒)，可能影响服务器性能");
+            }
+            
+            // 验证实体密度阈值
+            int densityThreshold = config.getInt("entity_density.threshold", 500);
+            if (densityThreshold <= 0) {
+                errors.append("实体密度阈值必须大于0 (当前: ").append(densityThreshold).append("); ");
+                hasErrors = true;
+            }
+            
+            // 验证畜牧业配置
+            int maxAnimals = config.getInt("livestock.maxAnimalsPerChunk", 20);
+            if (maxAnimals <= 0) {
+                errors.append("每区块最大动物数必须大于0 (当前: ").append(maxAnimals).append("); ");
+                hasErrors = true;
+            }
+            
+            // 验证TPS阈值
+            double tpsThreshold = config.getDouble("tps_monitor.lowTpsThreshold", 17.0);
+            if (tpsThreshold <= 0 || tpsThreshold > 20) {
+                errors.append("TPS阈值必须在0-20之间 (当前: ").append(tpsThreshold).append("); ");
+                hasErrors = true;
+            }
+            
+            // 验证性能配置
+            int batchSize = config.getInt("performance.batchSize", 100);
+            if (batchSize <= 0) {
+                errors.append("批处理大小必须大于0 (当前: ").append(batchSize).append("); ");
+                hasErrors = true;
+            }
+            
+            int batchDelay = config.getInt("performance.batchDelay", 10);
+            if (batchDelay < 0) {
+                errors.append("批处理延迟不能为负数 (当前: ").append(batchDelay).append("); ");
+                hasErrors = true;
+            }
+            
+            // 如果有错误，通知管理员
+            if (hasErrors) {
+                String errorMessage = "配置文件存在错误: " + errors.toString();
+                plugin.getLogger().severe(errorMessage);
+                notifyConfigError(errorMessage);
+            } else {
+                plugin.getLogger().info("配置文件验证通过");
+            }
+            
+        } catch (Exception e) {
+            plugin.getLogger().severe("配置验证过程中发生异常: " + e.getMessage());
+            e.printStackTrace();
+            notifyConfigError("配置验证失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 向管理员公屏通知配置错误
+     */
+    private void notifyConfigError(String errorMessage) {
+        try {
+            // 导入必要的类
+            org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
+                try {
+                    String message = org.bukkit.ChatColor.RED + "[配置错误] " + 
+                                   org.bukkit.ChatColor.WHITE + errorMessage;
+                    
+                    // 向所有在线的OP发送消息
+                    for (org.bukkit.entity.Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
+                        if (player.isOp()) {
+                            player.sendMessage(message);
+                        }
+                    }
+                    
+                    // 同时在控制台输出
+                    plugin.getLogger().severe("[配置错误通知] " + errorMessage);
+                    
+                } catch (Exception e) {
+                    plugin.getLogger().severe("发送配置错误通知时发生异常: " + e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            plugin.getLogger().severe("安排配置错误通知任务时发生异常: " + e.getMessage());
+        }
+    }
+    
+    // 添加缺失的方法
+    
+    /**
+     * 检查是否启用自动清理
+     */
+    public boolean isAutoCleanupEnabled() {
+        try {
+            return config.getBoolean("smart_cleanup.enabled", true);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取自动清理配置时发生错误，使用默认值: " + e.getMessage());
+            return true;
+        }
+    }
+    
+    /**
+     * 获取警告时间（分钟）
+     */
+    public int getWarningTimeMinutes() {
+        try {
+            return config.getInt("livestock.warningTime", 5);
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取警告时间配置时发生错误，使用默认值: " + e.getMessage());
+            return 5;
+        }
+    }
+    
+    /**
+     * 获取插件实例
+     */
+    public JavaPlugin getPlugin() {
+        return plugin;
+    }
+    
+    // 畜牧业警告消息模板配置
+    
+
+    
+
+    
+    /**
+     * 获取畜牧业警告消息模板
+     */
+    public String getLivestockWarningMessage(String messageKey) {
+        String path = "messages.livestock." + messageKey;
+        switch (messageKey) {
+            case "title":
+                return getString(path, "&c&l[邦邦卡邦！] &f畜牧业密度警告");
+            case "separator":
+                return getString(path, "&7===========================================");
+            case "location":
+                return getString(path, "&e位置: &f{region} &7({world} {x}, {z})");
+            case "violation":
+                return getString(path, "&c超标情况: &f当前 {current} 只，限制 {limit} 只 &c(超出 {excess} 只)");
+            case "details":
+                return getString(path, "&6详细信息:");
+            case "total_animals":
+                return getString(path, "&7- 总生物数量: &f{total} 只");
+            case "animal_types":
+                return getString(path, "&7- 动物类型: &f{types}");
+            case "cleanup_notice":
+                return getString(path, "&c&l清理通知:");
+            case "cleanup_time":
+                return getString(path, "&f系统将在 &c{time} 分钟&f 后自动清理超出的动物");
+            case "action_reminder":
+                return getString(path, "&e请 {title} 及时处理，避免自动清理造成损失");
+            case "cleanup_list":
+                return getString(path, "&6将被清理的动物:");
+            case "cleanup_item":
+                return getString(path, "&7- {type}: &f{count} 只");
+            case "countdown":
+                return getString(path, "&c&l倒计时: &f{time} 秒后开始清理");
+            default:
+                plugin.getLogger().warning("未知的畜牧业警告消息键: " + messageKey);
+                return "&c[消息模板缺失: " + messageKey + "]"; 
+        }
     }
 }

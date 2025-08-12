@@ -34,12 +34,14 @@ thresholds:
 livestock:
   # 是否启用畜牧业密度检测
   enableDensityCheck: true
-  # 每个区块最大动物数量
-  maxAnimalsPerChunk: 20
+  # 每个区块最大动物数量（建议50-100，避免频繁警告）
+  maxAnimalsPerChunk: 50
   # 预警时间（分钟）- 清理前提前通知
   warningTime: 5
   # 是否启用预警广播
   enableWarning: true
+  # 警告冷却时间（秒）- 防止重复警告的冷却期
+  warningCooldown: 60
 
 # 性能设置 - 50人服务器性能优化
 performance:
@@ -60,6 +62,14 @@ tps_monitoring:
   lowTpsThreshold: 15.0
   # 是否启用紧急清理 - 当TPS过低时自动执行清理
   emergencyCleanup: true
+  # TPS检查间隔（秒）- 多久检查一次TPS
+  checkInterval: 30
+  # 连续低TPS次数阈值 - 连续多少次低TPS后触发清理
+  consecutiveLowTpsThreshold: 3
+  # 低TPS清理强度 - 当TPS过低时的清理强度（1.0-3.0，数值越高清理越激进）
+  lowTpsCleanupIntensity: 2.0
+  # 是否在低TPS时优先清理聚集实体
+  prioritizeClusterCleanup: true
 
 # 聚集清理设置
 cluster_cleanup:
@@ -91,6 +101,31 @@ messages:
   broadcastCleanup: true
   # 是否显示详细清理统计
   showCleanupStats: true
+
+# 实体密度监控设置
+entity_density:
+  # 世界实体密度阈值 - 当世界实体总数超过此值时发出警告
+  # 多人服务器建议设置为1000-2000，或设置为-1禁用此功能
+  threshold: 1500
+
+# 定时检查设置
+scheduled_checks:
+  # 是否启用定时实体数量检查
+  enabled: true
+  # 实体数量检查间隔（秒）- 多久检查一次实体数量
+  entityCountCheckInterval: 120
+  # 畜牧业密度检查间隔（秒）- 多久检查一次畜牧业密度
+  livestockDensityCheckInterval: 180
+  # 性能指标检查间隔（秒）- 多久检查一次性能指标（TPS、MSPT等）
+  performanceCheckInterval: 60
+  # 是否在检查时自动记录日志
+  logChecks: true
+  # 检查结果保留时间（分钟）- 检查结果在内存中保留多久
+  resultRetentionTime: 30
+  # 是否启用预警系统 - 当指标接近阈值时提前警告
+  enableEarlyWarning: true
+  # 预警阈值比例 - 当指标达到阈值的多少比例时触发预警（0.7表示70%）
+  earlyWarningThreshold: 0.8
 
 # 全局设置
 global:

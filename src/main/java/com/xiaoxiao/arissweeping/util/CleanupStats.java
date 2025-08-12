@@ -52,6 +52,23 @@ public class CleanupStats {
         otherEntitiesCleaned.incrementAndGet();
     }
     
+    // 为了兼容性添加的方法
+    public void incrementItemsRemoved() {
+        itemsCleaned.incrementAndGet();
+    }
+    
+    public void incrementExperienceOrbsRemoved() {
+        experienceOrbsCleaned.incrementAndGet();
+    }
+    
+    public void incrementArrowsRemoved() {
+        arrowsCleaned.incrementAndGet();
+    }
+    
+    public void incrementMobsRemoved() {
+        mobsCleaned.incrementAndGet();
+    }
+    
     public int getItemsCleaned() {
         return itemsCleaned.get();
     }
@@ -74,6 +91,23 @@ public class CleanupStats {
     
     public int getOtherEntitiesCleaned() {
         return otherEntitiesCleaned.get();
+    }
+    
+    // 为了兼容性添加的getter方法
+    public int getItemsRemoved() {
+        return itemsCleaned.get();
+    }
+    
+    public int getExperienceOrbsRemoved() {
+        return experienceOrbsCleaned.get();
+    }
+    
+    public int getArrowsRemoved() {
+        return arrowsCleaned.get();
+    }
+    
+    public int getMobsRemoved() {
+        return mobsCleaned.get();
     }
     
     public int getTotalCleaned() {

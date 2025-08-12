@@ -1,0 +1,194 @@
+# Aris-Sweeping 插件配置文件示例
+# 此文件展示了所有可用的配置选项
+
+# 插件基本设置
+plugin:
+  enabled: true
+  debug: false
+  broadcastCleanup: true
+
+# 性能监控设置
+performance:
+  batchSize: 100
+  batchDelay: 1
+
+# 消息设置
+messages:
+  cleanupWarning: "§e[清理警告] 将在 {time} 分钟后清理过多的实体！"
+  cleanupComplete: "§a[清理完成] 已清理 {count} 个实体"
+  
+  # 畜牧业警告消息模板
+  livestock:
+    # 警告标题
+    title: "&c&l[邦邦卡邦！] &f畜牧业密度警告"
+    # 分隔线
+    separator: "&7==========================================="
+    # 区域和坐标位置模板
+    location: "&e位置: &f{region} &7({world} {x}, {z})"
+    # 超标情况模板
+    violation: "&c超标情况: &f当前 {current} 只，限制 {limit} 只 &c(超出 {excess} 只)"
+    # 超标情况标题
+    violation_header: "&6▶ [超标情况]"
+    # 详细信息标题
+    details: "&6详细信息:"
+    # 总生物数量模板
+    total_animals: "&7- 总生物数量: &f{total} 只 &c(超出 {excess} 只)"
+    # 动物类型统计模板
+    animal_types: "&7- 动物类型: &f{types}"
+    # 动物项目模板
+    animal_item: "&7  ◆ &f{type}: &f{count} 只"
+    # 清理通知标题
+    cleanup_notice: "&c&l清理通知:"
+    # 清理时间通知模板
+    cleanup_time: "&f系统将在 &c{time} 分钟&f 后自动清理超出的动物"
+    # 处理提醒模板
+    action_reminder: "&e请 {title} 及时处理，避免自动清理造成损失"
+    # 清理列表标题
+    cleanup_list: "&6将被清理的动物:"
+    # 清理项目模板
+    cleanup_item: "&7- {type}: &f{count} 只"
+    # 倒计时消息模板
+     countdown: "&c[畜牧业管理] {count} 个违规区块将在 {time} 后开始清理"
+
+# 畜牧业管理设置
+livestock:
+  # 启用畜牧业密度检查
+  enableDensityCheck: true
+  # 每个区块最大动物数量
+  maxAnimalsPerChunk: 30
+  # 启用警告功能
+  enableWarning: true
+  # 警告时间（分钟）
+  warningTime: 5
+  # 检查间隔（秒）
+  checkInterval: 300
+  
+  # 区域解析功能
+  regions:
+    # 启用区域解析功能
+    enabled: true
+    # 玩家称呼
+    playerTitle: "老师"
+    
+    # 区域定义（对角点坐标）
+    areas:
+      # 示例区域1：计算机学院自管区
+      computer_college:
+        name: "计算机学院自管区"
+        world: "world"
+        x1: -1000
+        z1: -1000
+        x2: -500
+        z2: -500
+      
+      # 示例区域2：商学院自管区
+      business_college:
+        name: "商学院自管区"
+        world: "world"
+        x1: 500
+        z1: 500
+        x2: 1000
+        z2: 1000
+      
+      # 示例区域3：工程学院自管区
+      engineering_college:
+        name: "工程学院自管区"
+        world: "world"
+        x1: -500
+        z1: 500
+        x2: 0
+        z2: 1000
+  
+  # 动物中文名称映射
+  animalNames:
+    cow: "牛"
+    pig: "猪"
+    chicken: "鸡"
+    sheep: "羊"
+    horse: "马"
+    donkey: "驴"
+    mule: "骡子"
+    llama: "羊驼"
+    rabbit: "兔子"
+    cat: "猫"
+    wolf: "狼"
+    parrot: "鹦鹉"
+    ocelot: "豹猫"
+    fox: "狐狸"
+    bee: "蜜蜂"
+    turtle: "海龟"
+    panda: "熊猫"
+    polar_bear: "北极熊"
+    goat: "山羊"
+    axolotl: "美西螈"
+    glow_squid: "发光鱿鱼"
+    squid: "鱿鱼"
+    cod: "鳕鱼"
+    salmon: "鲑鱼"
+    tropical_fish: "热带鱼"
+    pufferfish: "河豚"
+
+# 实体密度设置
+entity_density:
+  threshold: 50
+
+# TPS监控设置
+tps_monitor:
+  enabled: true
+  lowTpsThreshold: 18.0
+  checkInterval: 60
+
+# 集群清理设置
+cluster_cleanup:
+  enabled: true
+  minClusterSize: 10
+  preserveRatio: 0.3
+  onlyCountSameType: false
+
+# 智能清理设置
+smart_cleanup:
+  enabled: true
+  protectNamedEntities: true
+  protectLeashedEntities: true
+  protectRiddenEntities: true
+  spawnReasonFilter: ["NATURAL", "BREEDING"]
+
+# 实体清理设置
+entity_cleanup:
+  # 清理间隔（秒）
+  cleanupInterval: 600
+  
+  # 物品清理
+  items:
+    enabled: true
+    maxAge: 300
+  
+  # 经验球清理
+  experience_orbs:
+    enabled: true
+    maxAge: 300
+  
+  # 箭矢清理
+  arrows:
+    enabled: true
+    maxAge: 120
+  
+  # 掉落方块清理
+  falling_blocks:
+    enabled: true
+    maxAge: 60
+  
+  # 敌对生物清理
+  hostile_mobs:
+    enabled: false
+    maxAge: 600
+  
+  # 被动生物清理
+  passive_mobs:
+    enabled: false
+    maxAge: 1200
+
+# 全局设置
+global:
+  maxWorlds: 10
+  maxChunksPerWorld: 1000
