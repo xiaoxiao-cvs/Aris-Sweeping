@@ -1,10 +1,12 @@
 package com.xiaoxiao.arissweeping.command;
 
 import com.xiaoxiao.arissweeping.ArisSweeping;
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
 import com.xiaoxiao.arissweeping.cleanup.CleanupServiceManager;
 import com.xiaoxiao.arissweeping.config.ModConfig;
 import com.xiaoxiao.arissweeping.util.CleanupStats;
 import com.xiaoxiao.arissweeping.util.CleanupStateManager.CleanupType;
+import com.xiaoxiao.arissweeping.util.ThreadSafetyManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -20,6 +22,7 @@ public class CleanupExecutor {
     private final ArisSweeping plugin;
     private final ModConfig config;
     private final CleanupServiceManager serviceManager;
+    private final ThreadSafetyManager threadSafetyManager;
     private volatile long lastCleanupTime = 0;
     private static final long CLEANUP_COOLDOWN = 5000; // 5秒冷却时间
     // isCleanupRunning 字段已被 serviceManager.isAnyCleanupRunning() 替代
@@ -28,6 +31,7 @@ public class CleanupExecutor {
         this.plugin = plugin;
         this.config = plugin.getModConfig();
         this.serviceManager = new CleanupServiceManager(plugin);
+        this.threadSafetyManager = ThreadSafetyManager.getInstance();
     }
     
     /**
@@ -69,38 +73,45 @@ public class CleanupExecutor {
      * @param async 是否异步执行
      */
     private void executeCleanup(CleanupType type, CommandSender sender, boolean async) {
-        // 检查冷却时间
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastCleanupTime < CLEANUP_COOLDOWN) {
-            long remainingTime = (CLEANUP_COOLDOWN - (currentTime - lastCleanupTime)) / 1000;
-            sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理冷却中，请等待 " + remainingTime + " 秒后再试！");
-            return;
-        }
-
-        if (serviceManager.isCleanupRunning(type)) {
-            sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理任务正在进行中，请稍候...");
-            return;
-        }
-
-        lastCleanupTime = currentTime;
-        sender.sendMessage(ChatColor.GREEN + "[邦邦卡邦！] 开始执行 " + getCleanupTypeName(type) + " 清理...");
-
-        CompletableFuture<CleanupStats> future = serviceManager.executeCleanup(type, sender, async || config.isAsyncCleanup());
+        // 使用线程安全管理器执行清理操作
+        String operationName = "cleanup_" + type.name().toLowerCase();
         
-        future.thenAccept(stats -> {
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                String message = formatCleanupResult(type, stats);
-                if (config.isBroadcastCleanup()) {
-                    Bukkit.broadcastMessage(message);
-                } else {
-                    sender.sendMessage(message);
-                }
+        threadSafetyManager.safeExecute(operationName, () -> {
+            // 检查冷却时间
+            if (!threadSafetyManager.checkOperationCooldown("cleanup_cooldown", CLEANUP_COOLDOWN)) {
+                long currentTime = System.currentTimeMillis();
+                long remainingTime = (CLEANUP_COOLDOWN - (currentTime - lastCleanupTime)) / 1000;
+                sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理冷却中，请等待 " + remainingTime + " 秒后再试！");
+                return null;
+            }
+
+            if (serviceManager.isCleanupRunning(type)) {
+                sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理任务正在进行中，请稍候...");
+                return null;
+            }
+
+            lastCleanupTime = System.currentTimeMillis();
+            sender.sendMessage(ChatColor.GREEN + "[邦邦卡邦！] 开始执行 " + getCleanupTypeName(type) + " 清理...");
+
+            CompletableFuture<CleanupStats> future = serviceManager.executeCleanup(type, sender, async || config.isAsyncCleanup());
+            
+            future.thenAccept(stats -> {
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    String message = formatCleanupResult(type, stats);
+                    if (config.isBroadcastCleanup()) {
+                        Bukkit.broadcastMessage(message);
+                    } else {
+                        sender.sendMessage(message);
+                    }
+                });
+            }).exceptionally(throwable -> {
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理时发生错误: " + throwable.getMessage());
+                    LoggerUtil.severe("清理执行失败: " + throwable.getMessage());
+                });
+                return null;
             });
-        }).exceptionally(throwable -> {
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理时发生错误: " + throwable.getMessage());
-                plugin.getLogger().severe("清理执行失败: " + throwable.getMessage());
-            });
+            
             return null;
         });
     }

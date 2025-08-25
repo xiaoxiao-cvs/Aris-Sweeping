@@ -2,6 +2,7 @@ package com.xiaoxiao.arissweeping.livestock;
 
 import com.xiaoxiao.arissweeping.config.ModConfig;
 import com.xiaoxiao.arissweeping.util.EntityHotspotDetector;
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
 import com.xiaoxiao.arissweeping.util.SparkEntityMetrics;
 import org.bukkit.plugin.Plugin;
 
@@ -41,7 +42,7 @@ public class LivestockSmartCleanupService {
         if (plugin instanceof com.xiaoxiao.arissweeping.ArisSweeping) {
             com.xiaoxiao.arissweeping.ArisSweeping arisSweeping = (com.xiaoxiao.arissweeping.ArisSweeping) plugin;
             if (arisSweeping.isMainCleanupRunning()) {
-                plugin.getLogger().info("[LivestockSmartCleanup] 主清理正在运行，跳过畜牧业智能清理");
+                LoggerUtil.info("[LivestockSmartCleanup] 主清理正在运行，跳过畜牧业智能清理");
                 return;
             }
         }
@@ -51,10 +52,10 @@ public class LivestockSmartCleanupService {
             if (metrics != null && performanceAnalyzer.shouldPerformSmartCleanup(metrics, lastPerformanceCheck)) {
                 lastPerformanceCheck = System.currentTimeMillis();
                 cleanupManager.performSmartCleanup(metrics);
-                plugin.getLogger().info("[LivestockSmartCleanup] 基于性能指标执行智能清理");
+                LoggerUtil.info("[LivestockSmartCleanup] 基于性能指标执行智能清理");
             }
         } catch (Exception e) {
-            plugin.getLogger().severe("[LivestockSmartCleanup] 智能清理检查失败: " + e.getMessage());
+            LoggerUtil.severe("[LivestockSmartCleanup] 智能清理检查失败: " + e.getMessage());
             e.printStackTrace();
         }
     }

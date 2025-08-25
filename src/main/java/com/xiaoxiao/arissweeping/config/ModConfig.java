@@ -1,15 +1,19 @@
 package com.xiaoxiao.arissweeping.config;
 
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
+import com.xiaoxiao.arissweeping.util.ThreadSafetyManager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ModConfig {
     private final JavaPlugin plugin;
     private FileConfiguration config;
+    private final ThreadSafetyManager threadSafetyManager;
     
     // 配置缓存，减少重复的配置文件访问
     private final Map<String, Object> configCache = new ConcurrentHashMap<>();
@@ -19,6 +23,7 @@ public class ModConfig {
     public ModConfig(JavaPlugin plugin) {
         this.plugin = plugin;
         this.config = plugin.getConfig();
+        this.threadSafetyManager = ThreadSafetyManager.getInstance();
         loadDefaults();
         refreshCache();
     }
@@ -27,10 +32,10 @@ public class ModConfig {
      * 刷新配置缓存
      */
     private void refreshCache() {
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastCacheUpdate > CACHE_REFRESH_INTERVAL) {
+        // 使用ThreadSafetyManager的冷却检查，避免频繁的缓存刷新
+        if (threadSafetyManager.checkOperationCooldown("config_cache_refresh", CACHE_REFRESH_INTERVAL)) {
             configCache.clear();
-            lastCacheUpdate = currentTime;
+            lastCacheUpdate = System.currentTimeMillis();
             plugin.getLogger().fine("配置缓存已刷新");
         }
     }
@@ -64,7 +69,7 @@ public class ModConfig {
             configCache.put(path, value);
             return value;
         } catch (Exception e) {
-            plugin.getLogger().warning("获取配置 " + path + " 时发生错误，使用默认值: " + e.getMessage());
+            LoggerUtil.warning("获取配置 " + path + " 时发生错误，使用默认值: " + e.getMessage());
             return defaultValue;
         }
     }
@@ -189,9 +194,9 @@ public class ModConfig {
             config.options().copyDefaults(true);
             plugin.saveConfig();
             
-            plugin.getLogger().info("配置默认值加载成功");
+            LoggerUtil.info("配置默认值加载成功");
         } catch (Exception e) {
-            plugin.getLogger().severe("加载配置默认值时发生错误: " + e.getMessage());
+            LoggerUtil.severe("加载配置默认值时发生错误: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -204,9 +209,9 @@ public class ModConfig {
             // 验证配置文件
             validateConfigurationAndNotify();
             
-            plugin.getLogger().info("配置文件重新加载成功");
+            LoggerUtil.info("配置文件重新加载成功");
         } catch (Exception e) {
-            plugin.getLogger().severe("重新加载配置文件时发生错误: " + e.getMessage());
+            LoggerUtil.severe("重新加载配置文件时发生错误: " + e.getMessage());
             e.printStackTrace();
             
             // 向管理员公屏通知配置错误
@@ -220,13 +225,17 @@ public class ModConfig {
         return Math.max(interval, 10); // 确保最小值为10秒
     }
     
+    public List<String> getStringList(String path) {
+        return config.getStringList(path);
+    }
+    
     public void setCleanupInterval(int interval) {
         try {
             config.set("general.cleanupInterval", interval);
             plugin.saveConfig();
             configCache.put("general.cleanupInterval", interval); // 更新缓存
         } catch (Exception e) {
-            plugin.getLogger().severe("保存清理间隔配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存清理间隔配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -236,7 +245,7 @@ public class ModConfig {
             config.set("entity_cleanup.cleanupItems", enabled);
             plugin.saveConfig();
         } catch (Exception e) {
-            plugin.getLogger().severe("保存物品清理配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存物品清理配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -245,7 +254,7 @@ public class ModConfig {
             config.set("entity_cleanup.cleanupExperienceOrbs", enabled);
             plugin.saveConfig();
         } catch (Exception e) {
-            plugin.getLogger().severe("保存经验球清理配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存经验球清理配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -254,7 +263,7 @@ public class ModConfig {
             config.set("entity_cleanup.cleanupArrows", enabled);
             plugin.saveConfig();
         } catch (Exception e) {
-            plugin.getLogger().severe("保存箭矢清理配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存箭矢清理配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -263,7 +272,7 @@ public class ModConfig {
             config.set("entity_cleanup.cleanupFallingBlocks", enabled);
             plugin.saveConfig();
         } catch (Exception e) {
-            plugin.getLogger().severe("保存掉落方块清理配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存掉落方块清理配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -272,7 +281,7 @@ public class ModConfig {
             config.set("entity_cleanup.cleanupHostileMobs", enabled);
             plugin.saveConfig();
         } catch (Exception e) {
-            plugin.getLogger().severe("保存敌对生物清理配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存敌对生物清理配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -281,7 +290,7 @@ public class ModConfig {
             config.set("entity_cleanup.cleanupPassiveMobs", enabled);
             plugin.saveConfig();
         } catch (Exception e) {
-            plugin.getLogger().severe("保存被动生物清理配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存被动生物清理配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -310,7 +319,7 @@ public class ModConfig {
         try {
             return config.getBoolean("entity_cleanup.cleanupPassiveMobs", false);
         } catch (Exception e) {
-            plugin.getLogger().warning("获取被动生物清理配置时发生错误，使用默认值: " + e.getMessage());
+            LoggerUtil.warning("获取被动生物清理配置时发生错误，使用默认值: " + e.getMessage());
             return false;
         }
     }
@@ -321,7 +330,7 @@ public class ModConfig {
             int value = config.getInt("thresholds.maxItemsPerChunk", 50);
             return Math.max(value, 1); // 确保最小值为1
         } catch (Exception e) {
-            plugin.getLogger().warning("获取每区块最大物品数配置时发生错误，使用默认值: " + e.getMessage());
+            LoggerUtil.warning("获取每区块最大物品数配置时发生错误，使用默认值: " + e.getMessage());
             return 50;
         }
     }
@@ -331,7 +340,7 @@ public class ModConfig {
             int value = config.getInt("thresholds.maxEntitiesPerChunk", 100);
             return Math.max(value, 1); // 确保最小值为1
         } catch (Exception e) {
-            plugin.getLogger().warning("获取每区块最大实体数配置时发生错误，使用默认值: " + e.getMessage());
+            LoggerUtil.warning("获取每区块最大实体数配置时发生错误，使用默认值: " + e.getMessage());
             return 100;
         }
     }
@@ -347,7 +356,7 @@ public class ModConfig {
             config.set("thresholds.maxItemsPerChunk", value);
             plugin.saveConfig();
         } catch (Exception e) {
-            plugin.getLogger().severe("保存每区块最大物品数配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存每区块最大物品数配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -356,7 +365,7 @@ public class ModConfig {
             config.set("thresholds.maxEntitiesPerChunk", value);
             plugin.saveConfig();
         } catch (Exception e) {
-            plugin.getLogger().severe("保存每区块最大实体数配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存每区块最大实体数配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -365,7 +374,7 @@ public class ModConfig {
             config.set("thresholds.itemAgeThreshold", value);
             plugin.saveConfig();
         } catch (Exception e) {
-            plugin.getLogger().severe("保存物品年龄阈值配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存物品年龄阈值配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -374,7 +383,7 @@ public class ModConfig {
         try {
             return config.getBoolean("performance.asyncCleanup", true);
         } catch (Exception e) {
-            plugin.getLogger().warning("获取异步清理配置时发生错误，使用默认值: " + e.getMessage());
+            LoggerUtil.warning("获取异步清理配置时发生错误，使用默认值: " + e.getMessage());
             return true;
         }
     }
@@ -384,7 +393,7 @@ public class ModConfig {
             int value = config.getInt("performance.maxChunksPerTick", 5);
             return Math.max(value, 1); // 确保最小值为1
         } catch (Exception e) {
-            plugin.getLogger().warning("获取每tick最大区块数配置时发生错误，使用默认值: " + e.getMessage());
+            LoggerUtil.warning("获取每tick最大区块数配置时发生错误，使用默认值: " + e.getMessage());
             return 5;
         }
     }
@@ -394,7 +403,7 @@ public class ModConfig {
             int value = config.getInt("performance.batchSize", 100);
             return Math.max(value, 1); // 确保最小值为1
         } catch (Exception e) {
-            plugin.getLogger().warning("获取批处理大小配置时发生错误，使用默认值: " + e.getMessage());
+            LoggerUtil.warning("获取批处理大小配置时发生错误，使用默认值: " + e.getMessage());
             return 100;
         }
     }
@@ -404,7 +413,7 @@ public class ModConfig {
             int value = config.getInt("performance.batchDelay", 10);
             return Math.max(value, 0); // 确保最小值为0
         } catch (Exception e) {
-            plugin.getLogger().warning("获取批处理延迟配置时发生错误，使用默认值: " + e.getMessage());
+            LoggerUtil.warning("获取批处理延迟配置时发生错误，使用默认值: " + e.getMessage());
             return 10;
         }
     }
@@ -415,7 +424,7 @@ public class ModConfig {
             config.set("performance.asyncCleanup", enabled);
             plugin.saveConfig();
         } catch (Exception e) {
-            plugin.getLogger().severe("保存异步清理配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存异步清理配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -424,7 +433,7 @@ public class ModConfig {
             config.set("performance.maxChunksPerTick", value);
             plugin.saveConfig();
         } catch (Exception e) {
-            plugin.getLogger().severe("保存每tick最大区块数配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存每tick最大区块数配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -433,7 +442,7 @@ public class ModConfig {
             config.set("performance.batchSize", value);
             plugin.saveConfig();
         } catch (Exception e) {
-            plugin.getLogger().severe("保存批处理大小配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存批处理大小配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -442,7 +451,7 @@ public class ModConfig {
             config.set("performance.batchDelay", value);
             plugin.saveConfig();
         } catch (Exception e) {
-            plugin.getLogger().severe("保存批处理延迟配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("保存批处理延迟配置时发生错误: " + e.getMessage());
         }
     }
     
@@ -1302,7 +1311,7 @@ public class ModConfig {
         try {
             return config.getBoolean("smart_cleanup.enabled", true);
         } catch (Exception e) {
-            plugin.getLogger().warning("获取自动清理配置时发生错误，使用默认值: " + e.getMessage());
+            LoggerUtil.warning("获取自动清理配置时发生错误，使用默认值: " + e.getMessage());
             return true;
         }
     }
@@ -1314,7 +1323,7 @@ public class ModConfig {
         try {
             return config.getInt("livestock.warningTime", 5);
         } catch (Exception e) {
-            plugin.getLogger().warning("获取警告时间配置时发生错误，使用默认值: " + e.getMessage());
+            LoggerUtil.warning("获取警告时间配置时发生错误，使用默认值: " + e.getMessage());
             return 5;
         }
     }
@@ -1324,6 +1333,62 @@ public class ModConfig {
      */
     public JavaPlugin getPlugin() {
         return plugin;
+    }
+
+    /**
+     * 获取倒计时时间（秒）
+     */
+    public int getCountdownTime() {
+        return getCachedValue("cleanup.countdown.time", 30, Integer.class);
+    }
+
+    /**
+     * 是否启用倒计时
+     */
+    public boolean isCountdownEnabled() {
+        return getCachedValue("cleanup.countdown.enabled", true, Boolean.class);
+    }
+
+    /**
+     * 是否启用实体密度检查
+     */
+    public boolean isEntityDensityCheckEnabled() {
+        return getCachedValue("density.entity.enabled", true, Boolean.class);
+    }
+
+    /**
+     * 是否启用密度检查
+     */
+    public boolean isDensityCheckEnabled() {
+        return getCachedValue("density.check.enabled", true, Boolean.class);
+    }
+
+    /**
+     * 获取密度检查间隔（秒）
+     */
+    public int getDensityCheckInterval() {
+        return getCachedValue("density.check.interval", 60, Integer.class);
+    }
+
+    /**
+     * 获取区块实体阈值
+     */
+    public int getChunkEntityThreshold() {
+        return getCachedValue("density.chunk.entity.threshold", 50, Integer.class);
+    }
+
+    /**
+     * 是否在高密度时自动清理
+     */
+    public boolean isAutoCleanupOnHighDensity() {
+        return getCachedValue("density.auto.cleanup.enabled", false, Boolean.class);
+    }
+    
+    /**
+     * 获取清理世界列表
+     */
+    public List<String> getCleanupWorlds() {
+        return getStringList("cleanup.worlds");
     }
     
     // 畜牧业警告消息模板配置
@@ -1367,7 +1432,7 @@ public class ModConfig {
             case "countdown":
                 return getString(path, "&c&l倒计时: &f{time} 秒后开始清理");
             default:
-                plugin.getLogger().warning("未知的畜牧业警告消息键: " + messageKey);
+                LoggerUtil.warning("未知的畜牧业警告消息键: " + messageKey);
                 return "&c[消息模板缺失: " + messageKey + "]"; 
         }
     }

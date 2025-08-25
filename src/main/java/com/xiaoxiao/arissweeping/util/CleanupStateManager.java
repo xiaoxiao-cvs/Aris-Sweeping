@@ -254,4 +254,12 @@ public class CleanupStateManager {
                type == CleanupType.MANUAL || 
                type == CleanupType.LIVESTOCK;
     }
+    
+    /**
+     * 关闭状态管理器
+     */
+    public void shutdown() {
+        forceStopAllCleanups();
+        instance = null;
+    }
 }

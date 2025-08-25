@@ -3,6 +3,7 @@ package com.xiaoxiao.arissweeping.livestock;
 import com.xiaoxiao.arissweeping.config.ModConfig;
 import com.xiaoxiao.arissweeping.util.LivestockHotspotInfo;
 import com.xiaoxiao.arissweeping.util.LivestockStatistics;
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
 import org.bukkit.entity.EntityType;
 
 import java.util.HashMap;
@@ -66,7 +67,7 @@ public class LivestockViolationDetector {
             cleanupManager.scheduleCleanup(filteredViolations);
             recordWarningTimes(filteredViolations);
         } else if (config.isDebugMode()) {
-            config.getPlugin().getLogger().info("[LivestockViolationDetector] 所有违规位置都在冷却期内，跳过重复警告");
+            LoggerUtil.info("[LivestockViolationDetector] 所有违规位置都在冷却期内，跳过重复警告");
         }
     }
     
@@ -91,7 +92,7 @@ public class LivestockViolationDetector {
                 filtered.put(location, entry.getValue());
             } else if (config.isDebugMode()) {
                 long remainingCooldown = warningCooldownMs - (currentTime - lastWarningTime);
-                config.getPlugin().getLogger().info(String.format(
+                LoggerUtil.info(String.format(
                     "[LivestockViolationDetector] 位置 %s 仍在冷却期内，剩余 %d 秒", 
                     location, remainingCooldown / 1000));
             }
@@ -110,7 +111,7 @@ public class LivestockViolationDetector {
         }
         
         if (config.isDebugMode()) {
-            config.getPlugin().getLogger().info(String.format(
+            LoggerUtil.info(String.format(
                 "[LivestockViolationDetector] 已记录 %d 个位置的警告时间，冷却期 %d 秒", 
                 violations.size(), config.getWarningCooldown()));
         }
@@ -130,7 +131,7 @@ public class LivestockViolationDetector {
      * 记录扫描结果
      */
     private void logScanResults(int hotspotsChecked, int totalAnimals, int violationCount, double avgPerformanceImpact) {
-        config.getPlugin().getLogger().info(String.format(
+        LoggerUtil.info(String.format(
             "[LivestockViolationDetector] 热点检查完成 - 检查热点: %d, 发现动物: %d, 违规区块: %d, 性能影响: %.2f",
             hotspotsChecked, totalAnimals, violationCount, avgPerformanceImpact
         ));

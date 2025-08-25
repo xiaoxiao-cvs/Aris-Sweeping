@@ -6,7 +6,7 @@ api-version: "1.20"
 author: xiaoxiao
 description: 女仆爱丽丝 - 高性能Minecraft服务端实体清理插件
 website: https://github.com/xiaoxiao-cvs/Aris-Sweeping
-depend: [spark]
+softdepend: [spark]
 
 commands:
   arissweeping:

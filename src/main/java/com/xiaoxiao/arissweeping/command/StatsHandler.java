@@ -6,6 +6,7 @@ import com.xiaoxiao.arissweeping.permission.PermissionManager;
 import com.xiaoxiao.arissweeping.util.EntityHotspotDetector;
 import com.xiaoxiao.arissweeping.util.LivestockHotspotInfo;
 import com.xiaoxiao.arissweeping.util.LivestockStatistics;
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
 import me.lucko.spark.api.Spark;
 import me.lucko.spark.api.SparkProvider;
 import me.lucko.spark.api.statistic.StatisticWindow;
@@ -44,9 +45,9 @@ public class StatsHandler {
         try {
             this.spark = SparkProvider.get();
             this.hotspotDetector = new EntityHotspotDetector(plugin);
-            plugin.getLogger().info("[StatsHandler] 成功初始化Spark API和实体热点检测器");
+            LoggerUtil.info("[StatsHandler] 成功初始化Spark API和实体热点检测器");
         } catch (Exception e) {
-            plugin.getLogger().severe("[StatsHandler] 初始化失败: " + e.getMessage());
+            LoggerUtil.severe("[StatsHandler] 初始化失败: " + e.getMessage());
             throw new RuntimeException("StatsHandler初始化失败", e);
         }
     }
@@ -128,7 +129,7 @@ public class StatsHandler {
                     stats.append(ChatColor.GOLD).append("═══════════════════════════════════════");
                     
                 } catch (Exception e) {
-                    plugin.getLogger().severe("[StatsHandler] 获取统计信息时发生异常: " + e.getMessage());
+                    LoggerUtil.severe("[StatsHandler] 获取统计信息时发生异常: " + e.getMessage());
                     stats.setLength(0);
                     stats.append(ChatColor.RED).append("[邦邦卡邦！] 获取统计信息时发生错误，请查看控制台日志");
                 }
@@ -228,7 +229,7 @@ public class StatsHandler {
             }
             
         } catch (Exception e) {
-            plugin.getLogger().warning("[StatsHandler] 获取TPS信息时发生异常: " + e.getMessage());
+            LoggerUtil.warning("[StatsHandler] 获取TPS信息时发生异常: " + e.getMessage());
             // 回退到基本TPS显示
             if (config.isTpsMonitorEnabled() && plugin.getCleanupHandler().getTpsMonitor() != null) {
                 double currentTps = plugin.getCleanupHandler().getTpsMonitor().getCurrentTps();
@@ -270,7 +271,7 @@ public class StatsHandler {
             
             @Override
             public void onError(Exception error) {
-                plugin.getLogger().severe("[StatsHandler] 获取Spark增强畜牧业统计时发生异常: " + error.getMessage());
+                LoggerUtil.severe("[StatsHandler] 获取Spark增强畜牧业统计时发生异常: " + error.getMessage());
                 sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 获取畜牧业统计时发生错误，请查看控制台日志");
             }
         });
@@ -414,7 +415,7 @@ public class StatsHandler {
             sender.sendMessage(message.toString());
             
         } catch (Exception e) {
-            plugin.getLogger().severe("[StatsHandler] 处理畜牧业统计结果时发生异常: " + e.getMessage());
+            LoggerUtil.severe("[StatsHandler] 处理畜牧业统计结果时发生异常: " + e.getMessage());
             sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 处理统计数据时发生错误，请查看控制台日志");
         }
     }
@@ -506,7 +507,7 @@ public class StatsHandler {
             stats.append(ChatColor.WHITE).append("\n");
             
         } catch (Exception e) {
-            plugin.getLogger().warning("[StatsHandler] 获取性能统计时发生异常: " + e.getMessage());
+            LoggerUtil.warning("[StatsHandler] 获取性能统计时发生异常: " + e.getMessage());
             // 回退到基本TPS显示
             if (config.isTpsMonitorEnabled() && plugin.getCleanupHandler().getTpsMonitor() != null) {
                 double currentTps = plugin.getCleanupHandler().getTpsMonitor().getCurrentTps();
@@ -544,7 +545,7 @@ public class StatsHandler {
             stats.append(ChatColor.WHITE).append("\n");
             
         } catch (Exception e) {
-            plugin.getLogger().warning("[StatsHandler] 获取内存统计时发生异常: " + e.getMessage());
+            LoggerUtil.warning("[StatsHandler] 获取内存统计时发生异常: " + e.getMessage());
         }
     }
     

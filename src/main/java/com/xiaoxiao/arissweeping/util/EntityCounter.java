@@ -3,35 +3,73 @@ package com.xiaoxiao.arissweeping.util;
 import org.bukkit.entity.EntityType;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 优化的实体计数器，避免Map<EntityType, Integer>的装箱拆箱开销
  * 使用数组存储常见实体类型的计数，提高性能
  */
 public class EntityCounter {
-    // 常见实体类型的索引映射
-    private static final Map<EntityType, Integer> TYPE_INDEX_MAP = new HashMap<>();
+    // 常见实体类型的索引映射（线程安全）
+    private static final Map<EntityType, Integer> TYPE_INDEX_MAP;
     private static final EntityType[] INDEX_TYPE_MAP;
     private static final int COMMON_TYPES_COUNT;
     
     static {
-        // 定义常见的实体类型
-        EntityType[] commonTypes = {
-            EntityType.COW, EntityType.PIG, EntityType.SHEEP, EntityType.CHICKEN,
-            EntityType.HORSE, EntityType.DONKEY, EntityType.MULE, EntityType.LLAMA,
-            EntityType.RABBIT, EntityType.WOLF, EntityType.CAT, EntityType.PARROT,
-            EntityType.ITEM, EntityType.EXPERIENCE_ORB, EntityType.ARROW,
-            EntityType.FALLING_BLOCK, EntityType.ZOMBIE, EntityType.SKELETON,
-            EntityType.CREEPER, EntityType.SPIDER, EntityType.ENDERMAN,
-            EntityType.ARMOR_STAND, EntityType.ITEM_FRAME, EntityType.PAINTING,
-            EntityType.MINECART, EntityType.BOAT
-        };
+        // 定义常见的实体类型，使用版本兼容的方式
+        List<EntityType> commonTypesList = new ArrayList<>();
         
+        // 添加基础实体类型（所有版本都支持）
+        commonTypesList.add(EntityType.COW);
+        commonTypesList.add(EntityType.PIG);
+        commonTypesList.add(EntityType.SHEEP);
+        commonTypesList.add(EntityType.CHICKEN);
+        commonTypesList.add(EntityType.HORSE);
+        commonTypesList.add(EntityType.RABBIT);
+        commonTypesList.add(EntityType.WOLF);
+        commonTypesList.add(EntityType.EXPERIENCE_ORB);
+        commonTypesList.add(EntityType.ARROW);
+        commonTypesList.add(EntityType.FALLING_BLOCK);
+        commonTypesList.add(EntityType.ZOMBIE);
+        commonTypesList.add(EntityType.SKELETON);
+        commonTypesList.add(EntityType.CREEPER);
+        commonTypesList.add(EntityType.SPIDER);
+        commonTypesList.add(EntityType.ENDERMAN);
+        commonTypesList.add(EntityType.ARMOR_STAND);
+        commonTypesList.add(EntityType.MINECART);
+        commonTypesList.add(EntityType.BOAT);
+        
+        // 安全地添加可能不存在的实体类型
+        addEntityTypeIfExists(commonTypesList, "ITEM");
+        addEntityTypeIfExists(commonTypesList, "DONKEY");
+        addEntityTypeIfExists(commonTypesList, "MULE");
+        addEntityTypeIfExists(commonTypesList, "LLAMA");
+        addEntityTypeIfExists(commonTypesList, "CAT");
+        addEntityTypeIfExists(commonTypesList, "PARROT");
+        addEntityTypeIfExists(commonTypesList, "ITEM_FRAME");
+        addEntityTypeIfExists(commonTypesList, "PAINTING");
+        
+        EntityType[] commonTypes = commonTypesList.toArray(new EntityType[0]);
         COMMON_TYPES_COUNT = commonTypes.length;
-        INDEX_TYPE_MAP = commonTypes;
+        INDEX_TYPE_MAP = commonTypes.clone(); // 防御性复制
         
+        // 使用线程安全的Map初始化
+        Map<EntityType, Integer> tempMap = new HashMap<>();
         for (int i = 0; i < commonTypes.length; i++) {
-            TYPE_INDEX_MAP.put(commonTypes[i], i);
+            tempMap.put(commonTypes[i], i);
+        }
+        TYPE_INDEX_MAP = Collections.unmodifiableMap(tempMap);
+    }
+    
+    /**
+     * 安全地添加EntityType，如果该类型不存在则跳过
+     */
+    private static void addEntityTypeIfExists(List<EntityType> list, String typeName) {
+        try {
+            EntityType type = EntityType.valueOf(typeName);
+            list.add(type);
+        } catch (IllegalArgumentException e) {
+            // 该EntityType在当前版本中不存在，跳过
         }
     }
     

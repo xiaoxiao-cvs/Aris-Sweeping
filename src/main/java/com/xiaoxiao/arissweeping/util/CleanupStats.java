@@ -61,6 +61,15 @@ public class CleanupStats {
         otherEntitiesCleaned.incrementAndGet();
     }
     
+    // 兼容性方法 - 带Cleaned后缀的别名
+    public void incrementArrowsCleaned() {
+        incrementArrows();
+    }
+    
+    public void incrementExperienceOrbsCleaned() {
+        incrementExperienceOrbs();
+    }
+    
     // 冗余的'Removed'后缀方法已移除，请使用对应的标准方法
     
     public int getItemsCleaned() {

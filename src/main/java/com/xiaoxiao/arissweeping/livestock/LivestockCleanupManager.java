@@ -5,6 +5,8 @@ import com.xiaoxiao.arissweeping.util.SparkEntityMetrics;
 import com.xiaoxiao.arissweeping.util.CleanupStateManager;
 import com.xiaoxiao.arissweeping.cleanup.CleanupServiceManager;
 import com.xiaoxiao.arissweeping.util.CleanupStateManager.CleanupType;
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
+import com.xiaoxiao.arissweeping.util.ThreadSafetyManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -16,6 +18,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -24,16 +27,18 @@ import java.util.stream.Collectors;
 public class LivestockCleanupManager {
     private final Plugin plugin;
     private final ModConfig config;
-    private final Map<String, LivestockViolationInfo> pendingCleanups = new HashMap<>();
+    private final Map<String, LivestockViolationInfo> pendingCleanups = new ConcurrentHashMap<>();
     private final CleanupStateManager stateManager;
     private final CleanupServiceManager serviceManager;
-    private BukkitTask warningTask;
+    private final ThreadSafetyManager threadSafetyManager;
+    private volatile BukkitTask warningTask;
     
     public LivestockCleanupManager(Plugin plugin, ModConfig config) {
         this.plugin = plugin;
         this.config = config;
         this.stateManager = CleanupStateManager.getInstance();
         this.serviceManager = new CleanupServiceManager((com.xiaoxiao.arissweeping.ArisSweeping) plugin);
+        this.threadSafetyManager = ThreadSafetyManager.getInstance();
     }
     
     /**
@@ -275,22 +280,24 @@ public class LivestockCleanupManager {
             return;
         }
         
-        // 将违规信息添加到待清理列表
-        synchronized (pendingCleanups) {
+        // 使用线程安全管理器执行操作
+        threadSafetyManager.safeExecute("livestock_schedule_cleanup", () -> {
+            // 将违规信息添加到待清理列表（ConcurrentHashMap已经是线程安全的）
             pendingCleanups.putAll(violations);
-        }
-        
-        // 检查是否有紧急情况需要立即清理
-        boolean hasEmergency = violations.values().stream().anyMatch(LivestockViolationInfo::isEmergency);
-        
-        if (hasEmergency) {
-            plugin.getLogger().warning("[LivestockCleanupManager] 检测到紧急情况，立即执行清理");
-            performLivestockCleanup();
-        } else {
-            // 启动倒计时清理
-            int warningTimeMinutes = config.getWarningTimeMinutes();
-            startSmartLivestockCountdown(warningTimeMinutes, violations.size());
-        }
+            
+            // 检查是否有紧急情况需要立即清理
+            boolean hasEmergency = violations.values().stream().anyMatch(LivestockViolationInfo::isEmergency);
+            
+            if (hasEmergency) {
+                plugin.getLogger().warning("[LivestockCleanupManager] 检测到紧急情况，立即执行清理");
+                performLivestockCleanup();
+            } else {
+                // 启动倒计时清理
+                int warningTimeMinutes = config.getWarningTimeMinutes();
+                startSmartLivestockCountdown(warningTimeMinutes, violations.size());
+            }
+            return null;
+        });
     }
     
     /**
@@ -383,7 +390,7 @@ public class LivestockCleanupManager {
      */
     public void performLivestockCleanup() {
         if (!config.isAutoCleanupEnabled()) {
-            plugin.getLogger().info("[LivestockCleanupManager] 自动清理已禁用，跳过清理");
+            LoggerUtil.info("[LivestockCleanupManager] 自动清理已禁用，跳过清理");
             return;
         }
         
@@ -401,7 +408,7 @@ public class LivestockCleanupManager {
                         );
                         Bukkit.broadcastMessage(completionMessage);
                         
-                        plugin.getLogger().info(String.format(
+                        LoggerUtil.info(String.format(
                             "[LivestockCleanupManager] 畜牧业清理完成 - 移除动物: %d",
                             stats.getMobsCleaned()
                         ));
@@ -409,7 +416,7 @@ public class LivestockCleanupManager {
                 }.runTask(plugin);
             })
             .exceptionally(throwable -> {
-                plugin.getLogger().severe("[LivestockCleanupManager] 执行畜牧业清理时发生异常: " + throwable.getMessage());
+                LoggerUtil.severe("[LivestockCleanupManager] 执行畜牧业清理时发生异常: " + throwable.getMessage());
                 throwable.printStackTrace();
                 return null;
             });
@@ -425,7 +432,7 @@ public class LivestockCleanupManager {
         
         World world = Bukkit.getWorld(worldName);
         if (world == null) {
-            plugin.getLogger().warning("[LivestockCleanupManager] 世界不存在: " + worldName);
+            LoggerUtil.warning("[LivestockCleanupManager] 世界不存在: " + worldName);
             return 0;
         }
         

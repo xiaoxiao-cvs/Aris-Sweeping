@@ -1,6 +1,7 @@
 package com.xiaoxiao.arissweeping.livestock;
 
 import com.xiaoxiao.arissweeping.config.ModConfig;
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -30,21 +31,21 @@ public class LivestockScheduler {
      */
     public void startScheduling() {
         if (!config.isPluginEnabled() || !config.isScheduledChecksEnabled()) {
-            plugin.getLogger().info("[LivestockScheduler] 调度功能已在配置中禁用，跳过启动");
+            LoggerUtil.info("[LivestockScheduler] 调度功能已在配置中禁用，跳过启动");
             return;
         }
         
         stopScheduling();
         
         if (config.getMaxAnimalsPerChunk() <= 0) {
-            plugin.getLogger().warning("[LivestockScheduler] 配置中的动物密度阈值无效: " + config.getMaxAnimalsPerChunk());
+            LoggerUtil.warning("[LivestockScheduler] 配置中的动物密度阈值无效: " + config.getMaxAnimalsPerChunk());
             return;
         }
         
         startMainMonitorTask();
         startSmartCleanupTask();
         
-        plugin.getLogger().info(String.format(
+        LoggerUtil.info(String.format(
             "[LivestockScheduler] 任务调度已启动 - 监控间隔: %d秒, 智能清理: %s",
             config.getLivestockDensityCheckInterval(),
             config.isSmartCleanupEnabled() ? "启用" : "禁用"
@@ -65,14 +66,14 @@ public class LivestockScheduler {
             smartCleanupTask = null;
         }
         
-        plugin.getLogger().info("[LivestockScheduler] 任务调度已停止");
+        LoggerUtil.info("[LivestockScheduler] 任务调度已停止");
     }
     
     /**
      * 重启调度
      */
     public void restartScheduling() {
-        plugin.getLogger().info("[LivestockScheduler] 重启任务调度...");
+        LoggerUtil.info("[LivestockScheduler] 重启任务调度...");
         stopScheduling();
         
         // 延迟启动以确保完全停止

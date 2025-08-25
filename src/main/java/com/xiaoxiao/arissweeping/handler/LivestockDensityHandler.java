@@ -4,6 +4,7 @@ import com.xiaoxiao.arissweeping.config.ModConfig;
 import com.xiaoxiao.arissweeping.livestock.*;
 import com.xiaoxiao.arissweeping.util.LivestockStatistics;
 import com.xiaoxiao.arissweeping.util.SparkEntityMetrics;
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -47,9 +48,9 @@ public class LivestockDensityHandler {
             this.smartCleanupService = new LivestockSmartCleanupService(plugin, config, hotspotDetector, performanceAnalyzer, cleanupManager);
             this.scheduler = new LivestockScheduler(plugin, config, monitor, smartCleanupService);
             
-            plugin.getLogger().info("[LivestockDensityHandler] 成功初始化重构版畜牧业密度处理器");
+            LoggerUtil.info("[LivestockDensityHandler] 成功初始化重构版畜牧业密度处理器");
         } catch (Exception e) {
-            plugin.getLogger().severe("[LivestockDensityHandler] 初始化畜牧业密度处理器失败: " + e.getMessage());
+            LoggerUtil.severe("[LivestockDensityHandler] 初始化畜牧业密度处理器失败: " + e.getMessage());
             throw new RuntimeException("无法初始化畜牧业密度处理器", e);
         }
     }
@@ -211,7 +212,7 @@ public class LivestockDensityHandler {
      */
     public void resetPerformanceBaseline() {
         performanceAnalyzer.resetBaseline();
-        plugin.getLogger().info("[LivestockDensityHandler] 性能基线已重置");
+        LoggerUtil.info("[LivestockDensityHandler] 性能基线已重置");
     }
     
     /**
@@ -219,7 +220,7 @@ public class LivestockDensityHandler {
      */
     public void clearPendingCleanups() {
         cleanupManager.clearPendingCleanups();
-        plugin.getLogger().info("[LivestockDensityHandler] 已清理所有待处理的清理任务");
+        LoggerUtil.info("[LivestockDensityHandler] 已清理所有待处理的清理任务");
     }
     
     /**
@@ -227,7 +228,7 @@ public class LivestockDensityHandler {
      */
     public void clearViolationHistory() {
         violationDetector.clearWarningHistory();
-        plugin.getLogger().info("[LivestockDensityHandler] 已清理违规检测历史");
+        LoggerUtil.info("[LivestockDensityHandler] 已清理违规检测历史");
     }
     
     /**
@@ -293,11 +294,11 @@ public class LivestockDensityHandler {
      */
     public boolean performSystemCheck() {
         try {
-            plugin.getLogger().info("[LivestockDensityHandler] 开始系统自检...");
+            LoggerUtil.info("[LivestockDensityHandler] 开始系统自检...");
             
             // 检查配置
             if (!config.isPluginEnabled()) {
-                plugin.getLogger().warning("[LivestockDensityHandler] 插件已禁用");
+                LoggerUtil.warning("[LivestockDensityHandler] 插件已禁用");
                 return false;
             }
             
@@ -308,7 +309,7 @@ public class LivestockDensityHandler {
         try {
             monitor.getLastStatistics();
         } catch (Exception e) {
-            plugin.getLogger().warning("[LivestockDensityHandler] 监控器检查失败: " + e.getMessage());
+            LoggerUtil.warning("[LivestockDensityHandler] 监控器检查失败: " + e.getMessage());
             allHealthy = false;
         }
         
@@ -316,7 +317,7 @@ public class LivestockDensityHandler {
         try {
             scheduler.isScheduling();
         } catch (Exception e) {
-            plugin.getLogger().warning("[LivestockDensityHandler] 调度器检查失败: " + e.getMessage());
+            LoggerUtil.warning("[LivestockDensityHandler] 调度器检查失败: " + e.getMessage());
             allHealthy = false;
         }
         
@@ -325,20 +326,20 @@ public class LivestockDensityHandler {
             // 智能清理服务状态检查 - 检查服务是否正常工作
             smartCleanupService.getStatusInfo();
         } catch (Exception e) {
-            plugin.getLogger().warning("[LivestockDensityHandler] 智能清理服务检查失败: " + e.getMessage());
+            LoggerUtil.warning("[LivestockDensityHandler] 智能清理服务检查失败: " + e.getMessage());
             allHealthy = false;
         }
             
             if (allHealthy) {
-                plugin.getLogger().info("[LivestockDensityHandler] 系统自检通过");
+                LoggerUtil.info("[LivestockDensityHandler] 系统自检通过");
             } else {
-                plugin.getLogger().warning("[LivestockDensityHandler] 系统自检发现问题");
+                LoggerUtil.warning("[LivestockDensityHandler] 系统自检发现问题");
             }
             
             return allHealthy;
             
         } catch (Exception e) {
-            plugin.getLogger().severe("[LivestockDensityHandler] 系统自检时发生异常: " + e.getMessage());
+            LoggerUtil.severe("[LivestockDensityHandler] 系统自检时发生异常: " + e.getMessage());
             e.printStackTrace();
             return false;
         }

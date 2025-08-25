@@ -6,6 +6,7 @@ import com.xiaoxiao.arissweeping.util.LivestockHotspotInfo;
 import com.xiaoxiao.arissweeping.util.LivestockStatistics;
 import com.xiaoxiao.arissweeping.util.SparkEntityMetrics;
 import com.xiaoxiao.arissweeping.util.CleanupStateManager;
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
 import org.bukkit.plugin.Plugin;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public class LivestockMonitor {
         this.violationDetector = new LivestockViolationDetector(config);
         this.cleanupManager = new LivestockCleanupManager(plugin, config);
         
-        plugin.getLogger().info("[LivestockMonitor] 成功初始化畜牧业监控器");
+        LoggerUtil.info("[LivestockMonitor] 成功初始化畜牧业监控器");
     }
     
     /**
@@ -51,7 +52,7 @@ public class LivestockMonitor {
     public void resetMonitoringState() {
         cleanupManager.clearPendingCleanups();
         lastStatistics = null;
-        plugin.getLogger().info("[LivestockMonitor] 监控状态已重置");
+        LoggerUtil.info("[LivestockMonitor] 监控状态已重置");
     }
     
 
@@ -65,12 +66,12 @@ public class LivestockMonitor {
         }
         
         if (stateManager.isCleanupRunning(CleanupStateManager.CleanupType.LIVESTOCK)) {
-            plugin.getLogger().info("[LivestockMonitor] 清理任务正在进行中，跳过本次检查");
+            LoggerUtil.info("[LivestockMonitor] 清理任务正在进行中，跳过本次检查");
             return;
         }
         
         if (!plugin.isEnabled()) {
-            plugin.getLogger().fine("[LivestockMonitor] 监控检查跳过 - 插件已禁用");
+            LoggerUtil.fine("[LivestockMonitor] 监控检查跳过 - 插件已禁用");
             return;
         }
         
@@ -88,13 +89,13 @@ public class LivestockMonitor {
                 
                 @Override
                 public void onError(Exception error) {
-                    plugin.getLogger().severe("[LivestockMonitor] 热点扫描失败: " + error.getMessage());
+                    LoggerUtil.severe("[LivestockMonitor] 热点扫描失败: " + error.getMessage());
                     error.printStackTrace();
                 }
             });
             
         } catch (Exception e) {
-            plugin.getLogger().severe("[LivestockMonitor] 启动监控检查时发生异常: " + e.getMessage());
+            LoggerUtil.severe("[LivestockMonitor] 启动监控检查时发生异常: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -128,7 +129,7 @@ public class LivestockMonitor {
         try {
             return hotspotDetector.getCurrentSparkMetrics();
         } catch (Exception e) {
-            plugin.getLogger().warning("[LivestockMonitor] 获取性能指标失败: " + e.getMessage());
+            LoggerUtil.warning("[LivestockMonitor] 获取性能指标失败: " + e.getMessage());
             return null;
         }
     }

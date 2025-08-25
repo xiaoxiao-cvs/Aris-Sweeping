@@ -4,6 +4,7 @@ import com.xiaoxiao.arissweeping.ArisSweeping;
 import com.xiaoxiao.arissweeping.util.CleanupStats;
 import com.xiaoxiao.arissweeping.util.CleanupStateManager;
 import com.xiaoxiao.arissweeping.util.CleanupStateManager.CleanupType;
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 
@@ -169,10 +170,7 @@ public class CleanupServiceManager {
                     try {
                         results.put(entry.getKey(), entry.getValue().get());
                     } catch (Exception e) {
-                        plugin.getLogger().warning(String.format(
-                            "[CleanupServiceManager] 清理服务 %s 执行失败: %s",
-                            entry.getKey(), e.getMessage()
-                        ));
+                        plugin.getLogger().warning("[CleanupServiceManager] 清理服务 " + entry.getKey() + " 执行失败: " + e.getMessage());
                     }
                 }
                 return results;
@@ -277,11 +275,11 @@ public class CleanupServiceManager {
      * 关闭管理器，停止所有服务
      */
     public void shutdown() {
-        plugin.getLogger().info("[CleanupServiceManager] 正在关闭清理服务管理器");
+        LoggerUtil.info("[CleanupServiceManager] 正在关闭清理服务管理器");
         
         stopAllCleanups();
         services.clear();
         
-        plugin.getLogger().info("[CleanupServiceManager] 清理服务管理器已关闭");
+        LoggerUtil.info("[CleanupServiceManager] 清理服务管理器已关闭");
     }
 }

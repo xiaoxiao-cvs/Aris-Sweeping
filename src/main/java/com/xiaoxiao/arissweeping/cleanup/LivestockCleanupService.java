@@ -1,6 +1,7 @@
 package com.xiaoxiao.arissweeping.cleanup;
 
 import com.xiaoxiao.arissweeping.ArisSweeping;
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
 import com.xiaoxiao.arissweeping.config.ModConfig;
 import com.xiaoxiao.arissweeping.util.CleanupStats;
 import com.xiaoxiao.arissweeping.util.CleanupStateManager;
@@ -76,7 +77,7 @@ public class LivestockCleanupService implements CleanupService {
             sendMessage(sender, ChatColor.GREEN + "[" + getServiceName() + "] 清理完成！" + formatCleanupResult(stats));
             return stats;
         } catch (Exception e) {
-            plugin.getLogger().severe("[" + getServiceName() + "] 清理过程中发生错误: " + e.getMessage());
+            LoggerUtil.severe("[" + getServiceName() + "] 清理过程中发生错误: " + e.getMessage());
             e.printStackTrace();
             sendMessage(sender, ChatColor.RED + "[" + getServiceName() + "] 清理过程中发生错误，请查看控制台日志");
             return new CleanupStats();
@@ -87,36 +88,45 @@ public class LivestockCleanupService implements CleanupService {
     
     @Override
     public CompletableFuture<CleanupStats> executeCleanupAsync(CommandSender sender) {
-        return CompletableFuture.supplyAsync(() -> {
-            if (!canExecuteCleanup()) {
-                sendMessageAsync(sender, ChatColor.RED + "[" + getServiceName() + "] 清理任务正在进行中或条件不满足，请稍候...");
-                return new CleanupStats();
-            }
-            
-            if (!stateManager.tryStartCleanup(getCleanupType(), "LIVESTOCK_SERVICE_ASYNC")) {
-                sendMessageAsync(sender, ChatColor.RED + "[" + getServiceName() + "] 无法启动清理任务，请稍后重试");
-                return new CleanupStats();
-            }
-            
-            try {
-                sendMessageAsync(sender, ChatColor.GREEN + "[" + getServiceName() + "] 开始执行异步清理...");
-                CleanupStats stats = performCleanup();
-                sendMessageAsync(sender, ChatColor.GREEN + "[" + getServiceName() + "] 异步清理完成！" + formatCleanupResult(stats));
-                return stats;
-            } catch (Exception e) {
-                plugin.getLogger().severe("[" + getServiceName() + "] 异步清理过程中发生错误: " + e.getMessage());
-                e.printStackTrace();
-                sendMessageAsync(sender, ChatColor.RED + "[" + getServiceName() + "] 异步清理过程中发生错误，请查看控制台日志");
-                return new CleanupStats();
-            } finally {
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
+        CompletableFuture<CleanupStats> future = new CompletableFuture<>();
+        
+        // 在主线程中执行清理，避免异步线程访问Bukkit API导致的问题
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    if (!canExecuteCleanup()) {
+                        sendMessage(sender, ChatColor.RED + "[" + getServiceName() + "] 清理任务正在进行中或条件不满足，请稍候...");
+                        future.complete(new CleanupStats());
+                        return;
+                    }
+                    
+                    if (!stateManager.tryStartCleanup(getCleanupType(), "LIVESTOCK_SERVICE_ASYNC")) {
+                        sendMessage(sender, ChatColor.RED + "[" + getServiceName() + "] 无法启动清理任务，请稍后重试");
+                        future.complete(new CleanupStats());
+                        return;
+                    }
+                    
+                    try {
+                        sendMessage(sender, ChatColor.GREEN + "[" + getServiceName() + "] 开始执行异步清理...");
+                        CleanupStats stats = performCleanup();
+                        sendMessage(sender, ChatColor.GREEN + "[" + getServiceName() + "] 异步清理完成！" + formatCleanupResult(stats));
+                        future.complete(stats);
+                    } catch (Exception e) {
+                        LoggerUtil.severe("[" + getServiceName() + "] 异步清理过程中发生错误: " + e.getMessage());
+                        e.printStackTrace();
+                        sendMessage(sender, ChatColor.RED + "[" + getServiceName() + "] 异步清理过程中发生错误，请查看控制台日志");
+                        future.complete(new CleanupStats());
+                    } finally {
                         stateManager.completeCleanup(getCleanupType());
                     }
-                }.runTask(plugin);
+                } catch (Exception e) {
+                    future.completeExceptionally(e);
+                }
             }
-        });
+        }.runTask(plugin);
+        
+        return future;
     }
     
     @Override
@@ -160,7 +170,7 @@ public class LivestockCleanupService implements CleanupService {
     private CleanupStats performCleanup() {
         CleanupStats stats = new CleanupStats();
         
-        plugin.getLogger().info("[LivestockCleanupService] 开始执行生物清理");
+        LoggerUtil.info("[LivestockCleanupService] 开始执行生物清理");
         
         // 执行智能清理
         performSmartCleanup(stats);
@@ -168,10 +178,7 @@ public class LivestockCleanupService implements CleanupService {
         // 处理待清理队列
         processPendingCleanups(stats);
         
-        plugin.getLogger().info(String.format(
-            "[LivestockCleanupService] 生物清理完成 - 总计清理: %d, 生物: %d",
-            stats.getTotalCleaned(), stats.getMobsCleaned()
-        ));
+        LoggerUtil.info("[LivestockCleanupService] 生物清理完成 - 总计清理: " + stats.getTotalCleaned() + ", 生物: " + stats.getMobsCleaned());
         
         return stats;
     }
@@ -182,7 +189,7 @@ public class LivestockCleanupService implements CleanupService {
      */
     private void performSmartCleanup(CleanupStats stats) {
         if (!config.isSmartCleanupEnabled()) {
-            plugin.getLogger().info("[LivestockCleanupService] 智能清理已禁用");
+            LoggerUtil.info("[LivestockCleanupService] 智能清理已禁用");
             return;
         }
         
@@ -196,7 +203,7 @@ public class LivestockCleanupService implements CleanupService {
             
             // 检查插件是否在清理过程中被禁用
             if (!config.isPluginEnabled()) {
-                plugin.getLogger().info("[LivestockCleanupService] 清理过程中插件被禁用，停止清理");
+                LoggerUtil.info("[LivestockCleanupService] 清理过程中插件被禁用，停止清理");
                 break;
             }
             
@@ -241,7 +248,7 @@ public class LivestockCleanupService implements CleanupService {
                 return; // 不需要清理
             }
             
-            plugin.getLogger().info(String.format(
+            LoggerUtil.info(String.format(
                 "[LivestockCleanupService] 世界 %s 动物数量 (%d) 超过限制 (%d)，开始清理",
                 worldName, currentAnimalCount, maxAnimals
             ));
@@ -280,13 +287,13 @@ public class LivestockCleanupService implements CleanupService {
                 }
             }
             
-            plugin.getLogger().info(String.format(
+            LoggerUtil.info(String.format(
                 "[LivestockCleanupService] 世界 %s 清理了 %d 只动物",
                 worldName, removed
             ));
             
         } catch (Exception e) {
-            plugin.getLogger().warning(String.format(
+            LoggerUtil.warning(String.format(
                 "[LivestockCleanupService] 清理世界 %s 的动物时发生异常: %s",
                 world.getName(), e.getMessage()
             ));
@@ -302,7 +309,7 @@ public class LivestockCleanupService implements CleanupService {
             return;
         }
         
-        plugin.getLogger().info(String.format(
+        LoggerUtil.info(String.format(
             "[LivestockCleanupService] 处理 %d 个待清理的生物",
             pendingCleanups.size()
         ));
@@ -318,7 +325,7 @@ public class LivestockCleanupService implements CleanupService {
             }
         }
         
-        plugin.getLogger().info(String.format(
+        LoggerUtil.info(String.format(
             "[LivestockCleanupService] 从待清理队列中处理了 %d 个生物",
             processed
         ));

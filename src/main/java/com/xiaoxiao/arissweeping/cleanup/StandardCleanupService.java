@@ -6,6 +6,7 @@ import com.xiaoxiao.arissweeping.util.CleanupStats;
 import com.xiaoxiao.arissweeping.util.CleanupStateManager;
 import com.xiaoxiao.arissweeping.util.CleanupStateManager.CleanupType;
 import com.xiaoxiao.arissweeping.util.EntityTypeUtils;
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -82,36 +83,45 @@ public class StandardCleanupService implements CleanupService {
     
     @Override
     public CompletableFuture<CleanupStats> executeCleanupAsync(CommandSender sender) {
-        return CompletableFuture.supplyAsync(() -> {
-            if (!canExecuteCleanup()) {
-                sendMessageAsync(sender, ChatColor.RED + "[" + getServiceName() + "] 清理任务正在进行中或条件不满足，请稍候...");
-                return new CleanupStats();
-            }
-            
-            if (!stateManager.tryStartCleanup(getCleanupType(), "STANDARD_SERVICE_ASYNC")) {
-                sendMessageAsync(sender, ChatColor.RED + "[" + getServiceName() + "] 无法启动清理任务，请稍后重试");
-                return new CleanupStats();
-            }
-            
-            try {
-                sendMessageAsync(sender, ChatColor.GREEN + "[" + getServiceName() + "] 开始执行异步清理...");
-                CleanupStats stats = performCleanup();
-                sendMessageAsync(sender, ChatColor.GREEN + "[" + getServiceName() + "] 异步清理完成！" + formatCleanupResult(stats));
-                return stats;
-            } catch (Exception e) {
-                plugin.getLogger().severe("[" + getServiceName() + "] 异步清理过程中发生错误: " + e.getMessage());
-                e.printStackTrace();
-                sendMessageAsync(sender, ChatColor.RED + "[" + getServiceName() + "] 异步清理过程中发生错误，请查看控制台日志");
-                return new CleanupStats();
-            } finally {
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
+        CompletableFuture<CleanupStats> future = new CompletableFuture<>();
+        
+        // 在主线程中执行清理，避免异步线程访问Bukkit API导致的问题
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    if (!canExecuteCleanup()) {
+                        sendMessage(sender, ChatColor.RED + "[" + getServiceName() + "] 清理任务正在进行中或条件不满足，请稍候...");
+                        future.complete(new CleanupStats());
+                        return;
+                    }
+                    
+                    if (!stateManager.tryStartCleanup(getCleanupType(), "STANDARD_SERVICE_ASYNC")) {
+                        sendMessage(sender, ChatColor.RED + "[" + getServiceName() + "] 无法启动清理任务，请稍后重试");
+                        future.complete(new CleanupStats());
+                        return;
+                    }
+                    
+                    try {
+                        sendMessage(sender, ChatColor.GREEN + "[" + getServiceName() + "] 开始执行异步清理...");
+                        CleanupStats stats = performCleanup();
+                        sendMessage(sender, ChatColor.GREEN + "[" + getServiceName() + "] 异步清理完成！" + formatCleanupResult(stats));
+                        future.complete(stats);
+                    } catch (Exception e) {
+                        plugin.getLogger().severe("[" + getServiceName() + "] 异步清理过程中发生错误: " + e.getMessage());
+                        e.printStackTrace();
+                        sendMessage(sender, ChatColor.RED + "[" + getServiceName() + "] 异步清理过程中发生错误，请查看控制台日志");
+                        future.complete(new CleanupStats());
+                    } finally {
                         stateManager.completeCleanup(getCleanupType());
                     }
-                }.runTask(plugin);
+                } catch (Exception e) {
+                    future.completeExceptionally(e);
+                }
             }
-        });
+        }.runTask(plugin);
+        
+        return future;
     }
     
     @Override
@@ -155,7 +165,7 @@ public class StandardCleanupService implements CleanupService {
     private CleanupStats performCleanup() {
         CleanupStats stats = new CleanupStats();
         
-        plugin.getLogger().info("[StandardCleanupService] 开始执行标准清理");
+        LoggerUtil.info("[StandardCleanupService] 开始执行标准清理");
         
         for (World world : Bukkit.getWorlds()) {
             if (world == null) {
@@ -164,18 +174,15 @@ public class StandardCleanupService implements CleanupService {
             
             // 检查插件是否在清理过程中被禁用
             if (!config.isPluginEnabled()) {
-                plugin.getLogger().info("[StandardCleanupService] 清理过程中插件被禁用，停止清理");
+                LoggerUtil.info("[StandardCleanupService] 清理过程中插件被禁用，停止清理");
                 break;
             }
             
             cleanupWorld(world, stats);
         }
         
-        plugin.getLogger().info(String.format(
-            "[StandardCleanupService] 标准清理完成 - 总计清理: %d, 物品: %d, 经验球: %d, 箭矢: %d",
-            stats.getTotalCleaned(), stats.getItemsCleaned(), 
-            stats.getExperienceOrbsCleaned(), stats.getArrowsCleaned()
-        ));
+        LoggerUtil.info("[StandardCleanupService] 标准清理完成 - 总计清理: " + stats.getTotalCleaned() + 
+            ", 物品: " + stats.getItemsCleaned() + ", 经验球: " + stats.getExperienceOrbsCleaned() + ", 箭矢: " + stats.getArrowsCleaned());
         
         return stats;
     }
@@ -206,10 +213,7 @@ public class StandardCleanupService implements CleanupService {
                 }
             }
         } catch (Exception e) {
-            plugin.getLogger().warning(String.format(
-                "[StandardCleanupService] 清理世界 %s 时发生异常: %s", 
-                world.getName(), e.getMessage()
-            ));
+            plugin.getLogger().warning("[StandardCleanupService] 清理世界 " + world.getName() + " 时发生异常: " + e.getMessage());
         }
     }
     
@@ -243,10 +247,7 @@ public class StandardCleanupService implements CleanupService {
                 }
             }
         } catch (Exception e) {
-            plugin.getLogger().warning(String.format(
-                "[StandardCleanupService] 清理区块 [%d, %d] 时发生异常: %s",
-                chunk.getX(), chunk.getZ(), e.getMessage()
-            ));
+            plugin.getLogger().warning("[StandardCleanupService] 清理区块 [" + chunk.getX() + ", " + chunk.getZ() + "] 时发生异常: " + e.getMessage());
         }
     }
     

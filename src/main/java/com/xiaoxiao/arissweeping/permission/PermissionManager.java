@@ -1,6 +1,7 @@
 package com.xiaoxiao.arissweeping.permission;
 
 import com.xiaoxiao.arissweeping.ArisSweeping;
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -38,7 +39,7 @@ public class PermissionManager {
                     permissionFile.getParentFile().mkdirs();
                     permissionFile.createNewFile();
                 } catch (IOException e) {
-                    plugin.getLogger().severe("无法创建权限文件: " + e.getMessage());
+                    LoggerUtil.severe("无法创建权限文件: " + e.getMessage());
                     return;
                 }
             }
@@ -53,9 +54,9 @@ public class PermissionManager {
                 }
             }
             
-            plugin.getLogger().info("已加载 " + playerPermissions.size() + " 个玩家的权限配置");
+            LoggerUtil.info("已加载 " + playerPermissions.size() + " 个玩家的权限配置");
         } catch (Exception e) {
-            plugin.getLogger().severe("加载权限配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("加载权限配置时发生错误: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -70,7 +71,7 @@ public class PermissionManager {
         try {
             permissionConfig.save(permissionFile);
         } catch (IOException e) {
-            plugin.getLogger().severe("无法保存权限文件: " + e.getMessage());
+            LoggerUtil.severe("无法保存权限文件: " + e.getMessage());
         }
     }
     
@@ -78,7 +79,7 @@ public class PermissionManager {
         try {
             // 参数验证
             if (playerName == null || permission == null) {
-                plugin.getLogger().warning("权限检查参数为空: playerName=" + playerName + ", permission=" + permission);
+                LoggerUtil.warning("权限检查参数为空: playerName=" + playerName + ", permission=" + permission);
                 return false;
             }
             
@@ -100,7 +101,7 @@ public class PermissionManager {
             
             return permissions.contains(permission);
         } catch (Exception e) {
-            plugin.getLogger().warning("检查权限时发生错误: " + e.getMessage());
+            LoggerUtil.warning("检查权限时发生错误: " + e.getMessage());
             return false;
         }
     }
@@ -109,12 +110,12 @@ public class PermissionManager {
         try {
             // 参数验证
             if (playerName == null || permission == null) {
-                plugin.getLogger().warning("给予权限参数为空: playerName=" + playerName + ", permission=" + permission);
+                LoggerUtil.warning("给予权限参数为空: playerName=" + playerName + ", permission=" + permission);
                 return false;
             }
             
             if (!VALID_PERMISSIONS.contains(permission)) {
-                plugin.getLogger().warning("无效的权限节点: " + permission);
+                LoggerUtil.warning("无效的权限节点: " + permission);
                 return false;
             }
             
@@ -126,7 +127,7 @@ public class PermissionManager {
             notifyPermissionChange("给予", playerName, permission);
             return true;
         } catch (Exception e) {
-            plugin.getLogger().severe("给予权限时发生错误: " + e.getMessage());
+            LoggerUtil.severe("给予权限时发生错误: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -136,7 +137,7 @@ public class PermissionManager {
         try {
             // 参数验证
             if (playerName == null || permission == null) {
-                plugin.getLogger().warning("移除权限参数为空: playerName=" + playerName + ", permission=" + permission);
+                LoggerUtil.warning("移除权限参数为空: playerName=" + playerName + ", permission=" + permission);
                 return false;
             }
             
@@ -157,7 +158,7 @@ public class PermissionManager {
             notifyPermissionChange("移除", playerName, permission);
             return true;
         } catch (Exception e) {
-            plugin.getLogger().severe("移除权限时发生错误: " + e.getMessage());
+            LoggerUtil.severe("移除权限时发生错误: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -166,14 +167,14 @@ public class PermissionManager {
     public Set<String> getPlayerPermissions(String playerName) {
         try {
             if (playerName == null) {
-                plugin.getLogger().warning("获取玩家权限时玩家名为空");
+                LoggerUtil.warning("获取玩家权限时玩家名为空");
                 return new HashSet<>();
             }
             
             Set<String> permissions = playerPermissions.get(playerName.toLowerCase());
             return permissions != null ? new HashSet<>(permissions) : new HashSet<>();
         } catch (Exception e) {
-            plugin.getLogger().warning("获取玩家权限时发生错误: " + e.getMessage());
+            LoggerUtil.warning("获取玩家权限时发生错误: " + e.getMessage());
             return new HashSet<>();
         }
     }
@@ -182,7 +183,7 @@ public class PermissionManager {
         try {
             return new HashMap<>(playerPermissions);
         } catch (Exception e) {
-            plugin.getLogger().warning("获取所有玩家权限时发生错误: " + e.getMessage());
+            LoggerUtil.warning("获取所有玩家权限时发生错误: " + e.getMessage());
             return new HashMap<>();
         }
     }
@@ -200,14 +201,14 @@ public class PermissionManager {
                         player.sendMessage(message);
                     }
                 } catch (Exception e) {
-                    plugin.getLogger().warning("向玩家 " + player.getName() + " 发送权限变更通知时发生错误: " + e.getMessage());
+                    LoggerUtil.warning("向玩家 " + player.getName() + " 发送权限变更通知时发生错误: " + e.getMessage());
                 }
             }
             
             // 记录到控制台
-            plugin.getLogger().info("[权限管理] " + action + "了老师~ " + playerName + " 的权限: " + permission);
+            LoggerUtil.info("[权限管理] " + action + "了老师~ " + playerName + " 的权限: " + permission);
         } catch (Exception e) {
-            plugin.getLogger().severe("发送权限变更通知时发生错误: " + e.getMessage());
+            LoggerUtil.severe("发送权限变更通知时发生错误: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -226,14 +227,14 @@ public class PermissionManager {
                         player.sendMessage(message);
                     }
                 } catch (Exception e) {
-                    plugin.getLogger().warning("向玩家 " + player.getName() + " 发送配置变更通知时发生错误: " + e.getMessage());
+                    LoggerUtil.warning("向玩家 " + player.getName() + " 发送配置变更通知时发生错误: " + e.getMessage());
                 }
             }
             
             // 记录到控制台
-            plugin.getLogger().info("[配置变更] " + configKey + " 从 " + oldValue + " 更改为 " + newValue);
+            LoggerUtil.info("[配置变更] " + configKey + " 从 " + oldValue + " 更改为 " + newValue);
         } catch (Exception e) {
-            plugin.getLogger().severe("发送配置变更通知时发生错误: " + e.getMessage());
+            LoggerUtil.severe("发送配置变更通知时发生错误: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -241,9 +242,9 @@ public class PermissionManager {
     public void reloadPermissions() {
         try {
             loadPermissions();
-            plugin.getLogger().info("权限配置重载完成");
+            LoggerUtil.info("权限配置重载完成");
         } catch (Exception e) {
-            plugin.getLogger().severe("重载权限配置时发生错误: " + e.getMessage());
+            LoggerUtil.severe("重载权限配置时发生错误: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -268,7 +269,7 @@ public class PermissionManager {
                 return true;
             }
         } catch (Exception e) {
-            plugin.getLogger().warning("检查CommandSender权限时发生错误: " + e.getMessage());
+            LoggerUtil.warning("检查CommandSender权限时发生错误: " + e.getMessage());
             return false;
         }
     }

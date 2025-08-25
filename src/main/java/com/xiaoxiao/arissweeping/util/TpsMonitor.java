@@ -1,6 +1,7 @@
 package com.xiaoxiao.arissweeping.util;
 
 import com.xiaoxiao.arissweeping.ArisSweeping;
+import com.xiaoxiao.arissweeping.util.LoggerUtil;
 import me.lucko.spark.api.Spark;
 import me.lucko.spark.api.SparkProvider;
 import me.lucko.spark.api.statistic.StatisticWindow;
@@ -30,9 +31,9 @@ public class TpsMonitor {
         this.plugin = plugin;
         try {
             this.spark = SparkProvider.get();
-            plugin.getLogger().info("[TpsMonitor] 成功连接到Spark API");
+            LoggerUtil.info("[TpsMonitor] 成功连接到Spark API");
         } catch (Exception e) {
-            plugin.getLogger().severe("[TpsMonitor] 无法连接到Spark API: " + e.getMessage());
+            LoggerUtil.severe("[TpsMonitor] 无法连接到Spark API: " + e.getMessage());
             throw new RuntimeException("Spark API不可用", e);
         }
     }
@@ -45,7 +46,7 @@ public class TpsMonitor {
             monitorTask.cancel();
         }
         
-        plugin.getLogger().info("TPS monitoring activated.");
+        LoggerUtil.info("TPS monitoring activated.");
         
         monitorTask = new BukkitRunnable() {
             @Override
@@ -63,7 +64,7 @@ public class TpsMonitor {
             monitorTask.cancel();
             monitorTask = null;
         }
-        plugin.getLogger().info("[TpsMonitor] TPS监控已停止");
+        LoggerUtil.info("[TpsMonitor] TPS监控已停止");
     }
     
     /**
@@ -78,7 +79,7 @@ public class TpsMonitor {
         
         // 记录详细性能信息（调试模式）
         if (plugin.getModConfig().isDebugMode()) {
-            plugin.getLogger().info(String.format(
+            LoggerUtil.info(String.format(
                 "[TpsMonitor] TPS: %.2f, MSPT: %.2f", 
                 currentTps, currentMspt
             ));
@@ -92,7 +93,7 @@ public class TpsMonitor {
         double threshold = plugin.getModConfig().getLowTpsThreshold();
         
         if (threshold <= 0) {
-            plugin.getLogger().warning("[TpsMonitor] 无效的低TPS阈值: " + threshold);
+            LoggerUtil.warning("[TpsMonitor] 无效的低TPS阈值: " + threshold);
             return;
         }
         
@@ -119,7 +120,7 @@ public class TpsMonitor {
             }
         }
         
-        plugin.getLogger().warning(String.format("Low TPS detected (%.1f), triggering emergency cleanup", tps));
+        LoggerUtil.warning(String.format("Low TPS detected (%.1f), triggering emergency cleanup", tps));
         
         // 触发紧急清理
         plugin.getCleanupHandler().performEmergencyCleanup();
