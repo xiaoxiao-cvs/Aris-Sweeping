@@ -47,14 +47,14 @@ public class CleanupTabCompleter implements TabCompleter {
             
             switch (mainCommand) {
                 case "cleanup":
-                    if (hasPermission(sender, PermissionManager.CLEANUP)) {
+                    if (permissionManager.hasPermission(sender, PermissionManager.CLEANUP)) {
                         List<String> cleanupCommands = Arrays.asList("items", "mobs", "all");
                         completions.addAll(filterCompletions(cleanupCommands, args[1]));
                     }
                     break;
                     
                 case "config":
-                    if (hasPermission(sender, PermissionManager.CONFIG)) {
+                    if (permissionManager.hasPermission(sender, PermissionManager.CONFIG)) {
                         List<String> configCommands = Arrays.asList(
                             "interval", "items", "mobs", "animals", "experience", "exp", "arrows",
                             "broadcast", "async", "tps-monitor",
@@ -66,14 +66,14 @@ public class CleanupTabCompleter implements TabCompleter {
                     break;
                     
                 case "permission":
-                    if (hasPermission(sender, PermissionManager.ADMIN)) {
+                    if (permissionManager.hasPermission(sender, PermissionManager.ADMIN)) {
                         List<String> permissionCommands = Arrays.asList("give", "add", "remove", "delete", "list", "show", "reload");
                         completions.addAll(filterCompletions(permissionCommands, args[1]));
                     }
                     break;
                     
                 case "test":
-                    if (hasPermission(sender, PermissionManager.ADMIN)) {
+                    if (permissionManager.hasPermission(sender, PermissionManager.ADMIN)) {
                         List<String> testCommands = Arrays.asList("timer", "status");
                         completions.addAll(filterCompletions(testCommands, args[1]));
                     }
@@ -85,11 +85,11 @@ public class CleanupTabCompleter implements TabCompleter {
             String subCommand = args[1].toLowerCase();
             
             if (mainCommand.equals("config")) {
-                if (hasPermission(sender, PermissionManager.CONFIG)) {
+                if (permissionManager.hasPermission(sender, PermissionManager.CONFIG)) {
                     completions.addAll(getConfigValueCompletions(subCommand, args[2]));
                 }
             } else if (mainCommand.equals("permission")) {
-                if (hasPermission(sender, PermissionManager.ADMIN)) {
+                if (permissionManager.hasPermission(sender, PermissionManager.ADMIN)) {
                     if (subCommand.equals("give") || subCommand.equals("add") || 
                         subCommand.equals("remove") || subCommand.equals("delete") ||
                         subCommand.equals("list") || subCommand.equals("show")) {
@@ -104,7 +104,7 @@ public class CleanupTabCompleter implements TabCompleter {
             String subCommand = args[1].toLowerCase();
             
             if (mainCommand.equals("permission")) {
-                if (hasPermission(sender, PermissionManager.ADMIN)) {
+                if (permissionManager.hasPermission(sender, PermissionManager.ADMIN)) {
                     if (subCommand.equals("give") || subCommand.equals("add") || 
                         subCommand.equals("remove") || subCommand.equals("delete")) {
                         // 权限节点补全
@@ -187,17 +187,17 @@ public class CleanupTabCompleter implements TabCompleter {
     private boolean hasCommandPermission(CommandSender sender, String command) {
         switch (command) {
             case "cleanup":
-                return hasPermission(sender, PermissionManager.CLEANUP);
+                return permissionManager.hasPermission(sender, PermissionManager.CLEANUP);
             case "stats":
             case "tps":
             case "livestock-stats":
-                return hasPermission(sender, PermissionManager.STATS);
+                return permissionManager.hasPermission(sender, PermissionManager.STATS);
             case "config":
             case "toggle":
-                return hasPermission(sender, PermissionManager.CONFIG);
+                return permissionManager.hasPermission(sender, PermissionManager.CONFIG);
             case "permission":
             case "test":
-                return hasPermission(sender, PermissionManager.ADMIN);
+                return permissionManager.hasPermission(sender, PermissionManager.ADMIN);
             case "help":
                 return hasAnyPermission(sender);
             default:
@@ -209,31 +209,14 @@ public class CleanupTabCompleter implements TabCompleter {
      * 检查是否有任何权限
      */
     private boolean hasAnyPermission(CommandSender sender) {
-        if (!(sender instanceof Player)) {
-            return true; // 控制台总是有权限
-        }
-        
-        Player player = (Player) sender;
-        String playerName = player.getName();
-        
-        return permissionManager.hasPermission(playerName, PermissionManager.ADMIN) ||
-               permissionManager.hasPermission(playerName, PermissionManager.CLEANUP) ||
-               permissionManager.hasPermission(playerName, PermissionManager.STATS) ||
-               permissionManager.hasPermission(playerName, PermissionManager.CONFIG) ||
-               player.hasPermission(PermissionManager.ADMIN) ||
-               player.hasPermission(PermissionManager.CLEANUP) ||
-               player.hasPermission(PermissionManager.STATS) ||
-               player.hasPermission(PermissionManager.CONFIG);
+        return permissionManager.hasPermission(sender, PermissionManager.ADMIN) ||
+               permissionManager.hasPermission(sender, PermissionManager.CLEANUP) ||
+               permissionManager.hasPermission(sender, PermissionManager.STATS) ||
+               permissionManager.hasPermission(sender, PermissionManager.CONFIG);
     }
 
     /**
      * 检查权限
      */
-    private boolean hasPermission(CommandSender sender, String permission) {
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
-            return permissionManager.hasPermission(player.getName(), permission) || player.hasPermission(permission);
-        }
-        return true; // 控制台总是有权限
-    }
+    // 权限检查方法已移至PermissionManager统一处理
 }

@@ -1,7 +1,7 @@
 package com.xiaoxiao.arissweeping.livestock;
 
 import com.xiaoxiao.arissweeping.config.ModConfig;
-import com.xiaoxiao.arissweeping.util.EntityHotspotDetector.SparkEntityMetrics;
+import com.xiaoxiao.arissweeping.util.SparkEntityMetrics;
 
 /**
  * 畜牧业性能分析器 - 负责分析服务器性能并决定清理策略

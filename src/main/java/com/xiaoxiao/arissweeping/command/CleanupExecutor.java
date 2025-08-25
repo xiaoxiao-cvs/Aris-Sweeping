@@ -1,15 +1,17 @@
 package com.xiaoxiao.arissweeping.command;
 
 import com.xiaoxiao.arissweeping.ArisSweeping;
+import com.xiaoxiao.arissweeping.cleanup.CleanupServiceManager;
 import com.xiaoxiao.arissweeping.config.ModConfig;
 import com.xiaoxiao.arissweeping.util.CleanupStats;
+import com.xiaoxiao.arissweeping.util.CleanupStateManager.CleanupType;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Chunk;
-import org.bukkit.World;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.*;
 import org.bukkit.scheduler.BukkitRunnable;
+
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * 清理执行器 - 负责执行各种清理任务
@@ -17,13 +19,15 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class CleanupExecutor {
     private final ArisSweeping plugin;
     private final ModConfig config;
-    private volatile boolean isCleanupRunning = false;
+    private final CleanupServiceManager serviceManager;
     private volatile long lastCleanupTime = 0;
     private static final long CLEANUP_COOLDOWN = 5000; // 5秒冷却时间
+    // isCleanupRunning 字段已被 serviceManager.isAnyCleanupRunning() 替代
 
     public CleanupExecutor(ArisSweeping plugin) {
         this.plugin = plugin;
         this.config = plugin.getModConfig();
+        this.serviceManager = new CleanupServiceManager(plugin);
     }
     
     /**
@@ -31,110 +35,40 @@ public class CleanupExecutor {
      */
     public void handleCleanupCommand(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(ChatColor.YELLOW + "[邦邦卡邦！] 用法: /cleanup cleanup <now|items|mobs|all>");
+            sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 用法: /aris cleanup <items|mobs|all|force|status>");
             return;
         }
-        
+
         String cleanupType = args[1].toLowerCase();
         switch (cleanupType) {
-            case "now":
-            case "all":
-                executeStandardCleanup(sender);
-                break;
             case "items":
-                executeItemCleanup(sender);
+                executeCleanup(CleanupType.STANDARD, sender, false);
                 break;
             case "mobs":
-                executeMobCleanup(sender);
+                executeCleanup(CleanupType.LIVESTOCK, sender, false);
+                break;
+            case "all":
+                executeAllCleanups(sender);
+                break;
+            case "force":
+                executeForceCleanup(sender);
+                break;
+            case "status":
+                showCleanupStatus(sender);
                 break;
             default:
-                sender.sendMessage(ChatColor.YELLOW + "[邦邦卡邦！] 用法: /cleanup cleanup <now|items|mobs|all>");
+                sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 无效的清理类型！使用: items, mobs, all, force, status");
                 break;
         }
     }
 
     /**
-     * 执行物品清理
+     * 执行指定类型的清理
+     * @param type 清理类型
+     * @param sender 命令发送者
+     * @param async 是否异步执行
      */
-    public void executeItemCleanup(CommandSender sender) {
-        if (isCleanupRunning) {
-            sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理任务正在进行中，请稍候...");
-            return;
-        }
-        
-        isCleanupRunning = true;
-        sender.sendMessage(ChatColor.GREEN + "[邦邦卡邦！] 开始清理掉落物品...");
-        
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                try {
-                    CleanupStats stats = new CleanupStats();
-                    for (World world : Bukkit.getWorlds()) {
-                        for (Entity entity : world.getEntities()) {
-                            if (entity instanceof Item && shouldCleanupEntity(entity)) {
-                                entity.remove();
-                                stats.incrementItems();
-                            }
-                        }
-                    }
-                    
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        sender.sendMessage(ChatColor.GREEN + "[邦邦卡邦！] 物品清理完成！清理了 " + stats.getItemsCleaned() + " 个掉落物品");
-                        isCleanupRunning = false;
-                    });
-                } catch (Exception e) {
-                    plugin.getLogger().severe("Item cleanup failed: " + e.getMessage());
-                    e.printStackTrace();
-                    isCleanupRunning = false;
-                }
-            }
-        }.runTaskAsynchronously(plugin);
-    }
-    
-    /**
-     * 执行生物清理
-     */
-    public void executeMobCleanup(CommandSender sender) {
-        if (isCleanupRunning) {
-            sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理任务正在进行中，请稍候...");
-            return;
-        }
-        
-        isCleanupRunning = true;
-        sender.sendMessage(ChatColor.GREEN + "[邦邦卡邦！] 开始清理生物...");
-        
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                try {
-                    CleanupStats stats = new CleanupStats();
-                    for (World world : Bukkit.getWorlds()) {
-                        for (Entity entity : world.getEntities()) {
-                            if ((entity instanceof Monster || entity instanceof Animals) && shouldCleanupEntity(entity)) {
-                                entity.remove();
-                                stats.incrementMobs();
-                            }
-                        }
-                    }
-                    
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        sender.sendMessage(ChatColor.GREEN + "[邦邦卡邦！] 生物清理完成！清理了 " + stats.getMobsCleaned() + " 个生物");
-                        isCleanupRunning = false;
-                    });
-                } catch (Exception e) {
-                    plugin.getLogger().severe("Mob cleanup failed: " + e.getMessage());
-                    e.printStackTrace();
-                    isCleanupRunning = false;
-                }
-            }
-        }.runTaskAsynchronously(plugin);
-    }
-    
-    /**
-     * 执行标准清理
-     */
-    public void executeStandardCleanup(CommandSender sender) {
+    private void executeCleanup(CleanupType type, CommandSender sender, boolean async) {
         // 检查冷却时间
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastCleanupTime < CLEANUP_COOLDOWN) {
@@ -143,485 +77,148 @@ public class CleanupExecutor {
             return;
         }
 
-        if (isCleanupRunning) {
+        if (serviceManager.isCleanupRunning(type)) {
             sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理任务正在进行中，请稍候...");
             return;
         }
 
-        isCleanupRunning = true;
         lastCleanupTime = currentTime;
+        sender.sendMessage(ChatColor.GREEN + "[邦邦卡邦！] 开始执行 " + getCleanupTypeName(type) + " 清理...");
 
-        if (config.isAsyncCleanup()) {
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    try {
-                        CleanupStats stats = performStandardCleanup();
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                if (config.isBroadcastCleanup()) {
-                                    Bukkit.broadcastMessage(ChatColor.GREEN + "[邦邦卡邦！] 清理完成！清理了 " + 
-                                        ChatColor.YELLOW + stats.getItemsRemoved() + ChatColor.GREEN + " 个物品，" +
-                                        ChatColor.YELLOW + stats.getExperienceOrbsRemoved() + ChatColor.GREEN + " 个经验球，" +
-                                        ChatColor.YELLOW + stats.getArrowsRemoved() + ChatColor.GREEN + " 支箭矢！");
-                                } else {
-                                    sender.sendMessage(ChatColor.GREEN + "[邦邦卡邦！] 清理完成！清理了 " + 
-                                        ChatColor.YELLOW + stats.getItemsRemoved() + ChatColor.GREEN + " 个物品，" +
-                                        ChatColor.YELLOW + stats.getExperienceOrbsRemoved() + ChatColor.GREEN + " 个经验球，" +
-                                        ChatColor.YELLOW + stats.getArrowsRemoved() + ChatColor.GREEN + " 支箭矢！");
-                                }
-                                isCleanupRunning = false;
-                            }
-                        }.runTask(plugin);
-                    } catch (Exception e) {
-                        plugin.getLogger().severe("[CleanupExecutor] 异步清理时发生异常: " + e.getMessage());
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理时发生错误，请查看控制台日志");
-                                isCleanupRunning = false;
-                            }
-                        }.runTask(plugin);
-                    }
-                }
-            }.runTaskAsynchronously(plugin);
-        } else {
-            try {
-                CleanupStats stats = performStandardCleanup();
+        CompletableFuture<CleanupStats> future = serviceManager.executeCleanup(type, sender, async || config.isAsyncCleanup());
+        
+        future.thenAccept(stats -> {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                String message = formatCleanupResult(type, stats);
                 if (config.isBroadcastCleanup()) {
-                    Bukkit.broadcastMessage(ChatColor.GREEN + "[邦邦卡邦！] 清理完成！清理了 " + 
-                        ChatColor.YELLOW + stats.getItemsRemoved() + ChatColor.GREEN + " 个物品，" +
-                        ChatColor.YELLOW + stats.getExperienceOrbsRemoved() + ChatColor.GREEN + " 个经验球，" +
-                        ChatColor.YELLOW + stats.getArrowsRemoved() + ChatColor.GREEN + " 支箭矢！");
+                    Bukkit.broadcastMessage(message);
                 } else {
-                    sender.sendMessage(ChatColor.GREEN + "[邦邦卡邦！] 清理完成！清理了 " + 
-                        ChatColor.YELLOW + stats.getItemsRemoved() + ChatColor.GREEN + " 个物品，" +
-                        ChatColor.YELLOW + stats.getExperienceOrbsRemoved() + ChatColor.GREEN + " 个经验球，" +
-                        ChatColor.YELLOW + stats.getArrowsRemoved() + ChatColor.GREEN + " 支箭矢！");
+                    sender.sendMessage(message);
                 }
-                isCleanupRunning = false;
-            } catch (Exception e) {
-                plugin.getLogger().severe("[CleanupExecutor] 同步清理时发生异常: " + e.getMessage());
-                sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理时发生错误，请查看控制台日志");
-                isCleanupRunning = false;
-            }
+            });
+        }).exceptionally(throwable -> {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理时发生错误: " + throwable.getMessage());
+                plugin.getLogger().severe("清理执行失败: " + throwable.getMessage());
+            });
+            return null;
+        });
+    }
+    
+    // 旧的清理方法已被新的服务架构替代
+
+    // executeCleanupItems 方法已被新的服务架构替代
+
+    // executeCleanupMobs 方法已被新的服务架构替代
+
+    // executeCleanupAll 方法已被新的服务架构替代
+
+    // performStandardCleanup 方法已移至 StandardCleanupService
+
+    // performForceCleanup 方法已移至服务类
+
+    // shouldForceCleanupEntity 和 shouldCleanupEntity 方法已移至服务类
+
+    /**
+     * 执行所有类型的清理
+     */
+    private void executeAllCleanups(CommandSender sender) {
+        executeCleanup(CleanupType.STANDARD, sender, false);
+    }
+
+    /**
+     * 执行强制清理
+     */
+    private void executeForceCleanup(CommandSender sender) {
+        executeCleanup(CleanupType.MANUAL, sender, false);
+    }
+
+    /**
+      * 显示清理状态
+      */
+     private void showCleanupStatus(CommandSender sender) {
+         sender.sendMessage(ChatColor.YELLOW + "[邦邦卡邦！] 清理状态:");
+         
+         // 显示各个清理服务的状态
+         sender.sendMessage(ChatColor.GRAY + "  标准清理: " + 
+             (serviceManager.isCleanupRunning(CleanupType.STANDARD) ? ChatColor.RED + "运行中" : ChatColor.GREEN + "空闲"));
+         sender.sendMessage(ChatColor.GRAY + "  生物清理: " + 
+             (serviceManager.isCleanupRunning(CleanupType.LIVESTOCK) ? ChatColor.RED + "运行中" : ChatColor.GREEN + "空闲"));
+         
+         long timeSinceLastCleanup = System.currentTimeMillis() - lastCleanupTime;
+         if (timeSinceLastCleanup < CLEANUP_COOLDOWN) {
+             long remainingTime = (CLEANUP_COOLDOWN - timeSinceLastCleanup) / 1000;
+             sender.sendMessage(ChatColor.YELLOW + "  冷却时间: " + remainingTime + " 秒");
+         } else {
+             sender.sendMessage(ChatColor.GREEN + "  冷却时间: 已就绪");
+         }
+         
+         // 显示详细状态信息
+         sender.sendMessage(ChatColor.GRAY + "详细状态信息:");
+         String statusInfo = serviceManager.getStatusInfo();
+         for (String line : statusInfo.split("\n")) {
+             if (!line.trim().isEmpty()) {
+                 sender.sendMessage(ChatColor.GRAY + "  " + line);
+             }
+         }
+     }
+
+    /**
+     * 获取清理类型的显示名称
+     */
+    private String getCleanupTypeName(CleanupType type) {
+        switch (type) {
+            case STANDARD:
+                return "标准清理";
+            case LIVESTOCK:
+                return "生物清理";
+            case MANUAL:
+                return "强制清理";
+            default:
+                return "未知清理";
         }
     }
 
     /**
-     * 执行物品清理
+     * 格式化清理结果消息
      */
-    public void executeCleanupItems(CommandSender sender) {
-        if (isCleanupRunning) {
-            sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理任务正在进行中，请稍候...");
-            return;
-        }
-
-        isCleanupRunning = true;
-        lastCleanupTime = System.currentTimeMillis();
-
-        if (config.isAsyncCleanup()) {
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    executeItemsCleanupTask(sender);
-                }
-            }.runTaskAsynchronously(plugin);
-        } else {
-            executeItemsCleanupTask(sender);
-        }
-    }
-
-    private void executeItemsCleanupTask(CommandSender sender) {
-        try {
-            int itemsRemoved = 0;
-            
-            for (World world : Bukkit.getWorlds()) {
-                if (world == null) continue;
-                
-                for (Entity entity : world.getEntities()) {
-                    if (entity instanceof Item && shouldCleanupEntity(entity)) {
-                        entity.remove();
-                        itemsRemoved++;
-                    }
-                }
-            }
-            
-            final int finalItemsRemoved = itemsRemoved;
-            
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (config.isBroadcastCleanup()) {
-                        Bukkit.broadcastMessage(ChatColor.GREEN + "[邦邦卡邦！] 物品清理完成！清理了 " + 
-                            ChatColor.YELLOW + finalItemsRemoved + ChatColor.GREEN + " 个物品！");
-                    } else {
-                        sender.sendMessage(ChatColor.GREEN + "[邦邦卡邦！] 物品清理完成！清理了 " + 
-                            ChatColor.YELLOW + finalItemsRemoved + ChatColor.GREEN + " 个物品！");
-                    }
-                    isCleanupRunning = false;
-                }
-            }.runTask(plugin);
-            
-        } catch (Exception e) {
-            plugin.getLogger().severe("[CleanupExecutor] 物品清理时发生异常: " + e.getMessage());
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 物品清理时发生错误，请查看控制台日志");
-                    isCleanupRunning = false;
-                }
-            }.runTask(plugin);
-        }
-    }
-
-    /**
-     * 执行生物清理
-     */
-    public void executeCleanupMobs(CommandSender sender) {
-        if (isCleanupRunning) {
-            sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理任务正在进行中，请稍候...");
-            return;
-        }
-
-        isCleanupRunning = true;
-        lastCleanupTime = System.currentTimeMillis();
-
-        if (config.isAsyncCleanup()) {
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    executeMobsCleanupTask(sender);
-                }
-            }.runTaskAsynchronously(plugin);
-        } else {
-            executeMobsCleanupTask(sender);
-        }
-    }
-
-    private void executeMobsCleanupTask(CommandSender sender) {
-        try {
-            int mobsRemoved = 0;
-            
-            for (World world : Bukkit.getWorlds()) {
-                if (world == null) continue;
-                
-                for (Entity entity : world.getEntities()) {
-                    if ((entity instanceof Monster || entity instanceof Animals) && shouldCleanupEntity(entity)) {
-                        entity.remove();
-                        mobsRemoved++;
-                    }
-                }
-            }
-            
-            final int finalMobsRemoved = mobsRemoved;
-            
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (config.isBroadcastCleanup()) {
-                        Bukkit.broadcastMessage(ChatColor.GREEN + "[邦邦卡邦！] 生物清理完成！清理了 " + 
-                            ChatColor.YELLOW + finalMobsRemoved + ChatColor.GREEN + " 个生物！");
-                    } else {
-                        sender.sendMessage(ChatColor.GREEN + "[邦邦卡邦！] 生物清理完成！清理了 " + 
-                            ChatColor.YELLOW + finalMobsRemoved + ChatColor.GREEN + " 个生物！");
-                    }
-                    isCleanupRunning = false;
-                }
-            }.runTask(plugin);
-            
-        } catch (Exception e) {
-            plugin.getLogger().severe("[CleanupExecutor] 生物清理时发生异常: " + e.getMessage());
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 生物清理时发生错误，请查看控制台日志");
-                    isCleanupRunning = false;
-                }
-            }.runTask(plugin);
-        }
-    }
-
-    /**
-     * 执行全部清理
-     */
-    public void executeCleanupAll(CommandSender sender) {
-        if (isCleanupRunning) {
-            sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 清理任务正在进行中，请稍候...");
-            return;
-        }
-
-        isCleanupRunning = true;
-        lastCleanupTime = System.currentTimeMillis();
-
-        sender.sendMessage(ChatColor.YELLOW + "[邦邦卡邦！] 正在执行强制清理，这可能会影响服务器性能...");
-
-        if (config.isAsyncCleanup()) {
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    executeAllCleanupTask(sender);
-                }
-            }.runTaskAsynchronously(plugin);
-        } else {
-            executeAllCleanupTask(sender);
-        }
-    }
-
-    private void executeAllCleanupTask(CommandSender sender) {
-        try {
-            CleanupStats stats = performForceCleanup();
-            
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (config.isBroadcastCleanup()) {
-                        Bukkit.broadcastMessage(ChatColor.GREEN + "[邦邦卡邦！] 强制清理完成！清理了 " + 
-                            ChatColor.YELLOW + stats.getItemsRemoved() + ChatColor.GREEN + " 个物品，" +
-                            ChatColor.YELLOW + stats.getExperienceOrbsRemoved() + ChatColor.GREEN + " 个经验球，" +
-                            ChatColor.YELLOW + stats.getArrowsRemoved() + ChatColor.GREEN + " 支箭矢，" +
-                            ChatColor.YELLOW + stats.getMobsRemoved() + ChatColor.GREEN + " 个生物！");
-                    } else {
-                        sender.sendMessage(ChatColor.GREEN + "[邦邦卡邦！] 强制清理完成！清理了 " + 
-                            ChatColor.YELLOW + stats.getItemsRemoved() + ChatColor.GREEN + " 个物品，" +
-                            ChatColor.YELLOW + stats.getExperienceOrbsRemoved() + ChatColor.GREEN + " 个经验球，" +
-                            ChatColor.YELLOW + stats.getArrowsRemoved() + ChatColor.GREEN + " 支箭矢，" +
-                            ChatColor.YELLOW + stats.getMobsRemoved() + ChatColor.GREEN + " 个生物！");
-                    }
-                    isCleanupRunning = false;
-                }
-            }.runTask(plugin);
-            
-        } catch (Exception e) {
-            plugin.getLogger().severe("[CleanupExecutor] 强制清理时发生异常: " + e.getMessage());
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 强制清理时发生错误，请查看控制台日志");
-                    isCleanupRunning = false;
-                }
-            }.runTask(plugin);
-        }
-    }
-
-    /**
-     * 执行标准清理逻辑
-     */
-    private CleanupStats performStandardCleanup() {
-        CleanupStats stats = new CleanupStats();
+    private String formatCleanupResult(CleanupType type, CleanupStats stats) {
+        StringBuilder message = new StringBuilder();
+        message.append(ChatColor.GREEN).append("[邦邦卡邦！] ").append(getCleanupTypeName(type)).append("完成！清理了 ");
         
-        for (World world : Bukkit.getWorlds()) {
-            if (world == null) continue;
-            
-            for (Chunk chunk : world.getLoadedChunks()) {
-                if (chunk == null) continue;
-                
-                for (Entity entity : chunk.getEntities()) {
-                    if (shouldCleanupEntity(entity)) {
-                        if (entity instanceof Item) {
-                            stats.incrementItemsRemoved();
-                        } else if (entity instanceof ExperienceOrb) {
-                            stats.incrementExperienceOrbsRemoved();
-                        } else if (entity instanceof Arrow) {
-                            stats.incrementArrowsRemoved();
-                        }
-                        entity.remove();
-                    }
-                }
-            }
+        if (stats.getItemsCleaned() > 0) {
+            message.append(ChatColor.YELLOW).append(stats.getItemsCleaned()).append(ChatColor.GREEN).append(" 个物品，");
+        }
+        if (stats.getExperienceOrbsCleaned() > 0) {
+            message.append(ChatColor.YELLOW).append(stats.getExperienceOrbsCleaned()).append(ChatColor.GREEN).append(" 个经验球，");
+        }
+        if (stats.getArrowsCleaned() > 0) {
+            message.append(ChatColor.YELLOW).append(stats.getArrowsCleaned()).append(ChatColor.GREEN).append(" 支箭矢，");
+        }
+        if (stats.getMobsCleaned() > 0) {
+            message.append(ChatColor.YELLOW).append(stats.getMobsCleaned()).append(ChatColor.GREEN).append(" 个生物，");
         }
         
-        return stats;
-    }
-
-    /**
-     * 执行强制清理逻辑
-     */
-    private CleanupStats performForceCleanup() {
-        CleanupStats stats = new CleanupStats();
-        
-        for (World world : Bukkit.getWorlds()) {
-            if (world == null) continue;
-            
-            for (Chunk chunk : world.getLoadedChunks()) {
-                if (chunk == null) continue;
-                
-                for (Entity entity : chunk.getEntities()) {
-                    if (shouldForceCleanupEntity(entity)) {
-                        if (entity instanceof Item) {
-                            stats.incrementItemsRemoved();
-                        } else if (entity instanceof ExperienceOrb) {
-                            stats.incrementExperienceOrbsRemoved();
-                        } else if (entity instanceof Arrow) {
-                            stats.incrementArrowsRemoved();
-                        } else if (entity instanceof Monster || entity instanceof Animals) {
-                            stats.incrementMobsRemoved();
-                        }
-                        entity.remove();
-                    }
-                }
-            }
+        // 移除最后的逗号
+        String result = message.toString();
+        if (result.endsWith("，")) {
+            result = result.substring(0, result.length() - 1);
         }
+        result += "！";
         
-        return stats;
-    }
-
-    /**
-     * 判断实体是否应该被强制清理
-     */
-    private boolean shouldForceCleanupEntity(Entity entity) {
-        // 永远不清理玩家
-        if (entity instanceof Player) {
-            return false;
-        }
-        
-        // 不清理有自定义名称的实体
-        if (entity.getCustomName() != null && !entity.getCustomName().isEmpty()) {
-            return false;
-        }
-        
-        // 不清理拴绳实体
-        if (entity instanceof LeashHitch) {
-            return false;
-        }
-        
-        // 不清理画和物品展示框
-        if (entity instanceof Painting || entity instanceof ItemFrame) {
-            return false;
-        }
-        
-        // 不清理盔甲架
-        if (entity instanceof ArmorStand) {
-            return false;
-        }
-        
-        // 清理物品（强制清理忽略年龄）
-        if (entity instanceof Item) {
-            return config.isCleanupItems();
-        }
-        
-        // 清理经验球
-        if (entity instanceof ExperienceOrb) {
-            return config.isCleanupExperienceOrbs();
-        }
-        
-        // 清理箭矢
-        if (entity instanceof Arrow) {
-            return config.isCleanupArrows();
-        }
-        
-        // 清理敌对生物
-        if (entity instanceof Monster) {
-            return config.isCleanupHostileMobs();
-        }
-        
-        // 清理被动生物（强制清理忽略驯服状态）
-        if (entity instanceof Animals) {
-            return config.isCleanupPassiveMobs();
-        }
-        
-        return false;
-    }
-
-    /**
-     * 判断实体是否应该被清理（标准清理）
-     */
-    private boolean shouldCleanupEntity(Entity entity) {
-        // 永远不清理玩家
-        if (entity instanceof Player) {
-            return false;
-        }
-        
-        // 不清理有自定义名称的实体
-        if (entity.getCustomName() != null && !entity.getCustomName().isEmpty()) {
-            return false;
-        }
-        
-        // 不清理拴绳实体
-        if (entity instanceof LeashHitch) {
-            return false;
-        }
-        
-        // 不清理画和物品展示框
-        if (entity instanceof Painting || entity instanceof ItemFrame) {
-            return false;
-        }
-        
-        // 不清理盔甲架
-        if (entity instanceof ArmorStand) {
-            return false;
-        }
-        
-        // 清理物品
-        if (entity instanceof Item) {
-            if (!config.isCleanupItems()) return false;
-            
-            Item item = (Item) entity;
-            // 检查物品年龄
-            if (item.getTicksLived() < config.getItemMinAge()) {
-                return false;
-            }
-            return true;
-        }
-        
-        // 清理经验球
-        if (entity instanceof ExperienceOrb) {
-            if (!config.isCleanupExperienceOrbs()) return false;
-            
-            ExperienceOrb orb = (ExperienceOrb) entity;
-            // 检查经验球年龄
-            if (orb.getTicksLived() < config.getExperienceOrbMinAge()) {
-                return false;
-            }
-            return true;
-        }
-        
-        // 清理箭矢
-        if (entity instanceof Arrow) {
-            if (!config.isCleanupArrows()) return false;
-            
-            Arrow arrow = (Arrow) entity;
-            // 不清理玩家射出的箭
-            if (arrow.getShooter() instanceof Player) {
-                return false;
-            }
-            // 检查箭矢年龄
-            if (arrow.getTicksLived() < config.getArrowMinAge()) {
-                return false;
-            }
-            return true;
-        }
-        
-        // 清理敌对生物
-        if (entity instanceof Monster) {
-            return config.isCleanupHostileMobs();
-        }
-        
-        // 清理被动生物
-        if (entity instanceof Animals) {
-            if (!config.isCleanupPassiveMobs()) return false;
-            
-            Animals animal = (Animals) entity;
-            // 不清理已驯服的动物
-            if (animal instanceof Tameable) {
-                Tameable tameable = (Tameable) animal;
-                if (tameable.isTamed()) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        
-        return false;
+        return result;
     }
 
     // Getter methods
     public boolean isCleanupRunning() {
-        return isCleanupRunning;
+        return serviceManager.isAnyCleanupRunning();
     }
 
     public long getLastCleanupTime() {
         return lastCleanupTime;
+    }
+
+    public CleanupServiceManager getServiceManager() {
+        return serviceManager;
     }
 }

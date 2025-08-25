@@ -26,8 +26,8 @@ public class ConfigHandler {
      */
     public void handleConfigCommand(CommandSender sender, String[] args) {
         // 检查权限
-        if (!hasPermission(sender, PermissionManager.CONFIG)) {
-            sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 老师~没有权限修改配置哦~");
+        if (!permissionManager.hasPermission(sender, PermissionManager.CONFIG)) {
+            sender.sendMessage(ChatColor.RED + "你没有权限执行此命令！");
             return;
         }
 
@@ -303,8 +303,8 @@ public class ConfigHandler {
      */
     public void handleToggleCommand(CommandSender sender) {
         // 检查权限
-        if (!hasPermission(sender, PermissionManager.CONFIG)) {
-            sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 老师~没有权限切换插件状态哦~");
+        if (!permissionManager.hasPermission(sender, PermissionManager.CONFIG)) {
+            sender.sendMessage(ChatColor.RED + "你没有权限执行此命令！");
             return;
         }
 
@@ -388,11 +388,5 @@ public class ConfigHandler {
     /**
      * 检查权限
      */
-    private boolean hasPermission(CommandSender sender, String permission) {
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
-            return permissionManager.hasPermission(player.getName(), permission) || player.hasPermission(permission);
-        }
-        return true; // 控制台总是有权限
-    }
+    // 权限检查方法已移至PermissionManager统一处理
 }

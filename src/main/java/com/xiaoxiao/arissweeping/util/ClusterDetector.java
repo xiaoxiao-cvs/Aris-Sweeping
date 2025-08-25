@@ -224,90 +224,59 @@ public class ClusterDetector {
      */
     public static List<Entity> getClusterCleanupCandidates(List<Entity> entities, double nearbyDistance, 
                                                            int minClusterSize, double preserveRatio) {
-        try {
-            List<Entity> candidates = new ArrayList<>();
-            
-            if (entities == null || entities.isEmpty() || nearbyDistance <= 0 || minClusterSize <= 0 || preserveRatio < 0 || preserveRatio > 1) {
-                return candidates;
+        List<Entity> candidates = new ArrayList<>();
+        
+        if (entities == null || entities.isEmpty() || nearbyDistance <= 0 || minClusterSize <= 0 || preserveRatio < 0 || preserveRatio > 1) {
+            return candidates;
+        }
+        
+        Map<EntityType, List<Entity>> typeGroups = new HashMap<>();
+        
+        // 按类型分组，过滤有效实体
+        for (Entity entity : entities) {
+            if (entity != null && entity.isValid()) {
+                typeGroups.computeIfAbsent(entity.getType(), k -> new ArrayList<>()).add(entity);
             }
+        }
+        
+        // 对每种类型的实体进行聚集检测
+        for (Map.Entry<EntityType, List<Entity>> entry : typeGroups.entrySet()) {
+            List<Entity> typeEntities = entry.getValue();
             
-            Map<EntityType, List<Entity>> typeGroups = new HashMap<>();
-            
-            // 按类型分组，过滤有效实体
-            for (Entity entity : entities) {
-                try {
-                    if (entity != null && entity.isValid()) {
-                        typeGroups.computeIfAbsent(entity.getType(), k -> new ArrayList<>()).add(entity);
-                    }
-                } catch (Exception e) {
-                    // 跳过有问题的实体
+            for (Entity entity : typeEntities) {
+                if (entity == null || !entity.isValid()) {
                     continue;
                 }
-            }
-            
-            // 对每种类型的实体进行聚集检测
-            for (Map.Entry<EntityType, List<Entity>> entry : typeGroups.entrySet()) {
-                try {
-                    List<Entity> typeEntities = entry.getValue();
+                
+                if (isEntityClustered(entity, nearbyDistance, minClusterSize, true)) {
+                    // 获取聚集区域内的同类型实体
+                    List<Entity> clusteredSameType = entity.getNearbyEntities(nearbyDistance, nearbyDistance, nearbyDistance)
+                        .stream()
+                        .filter(e -> e != null && e.isValid() && e.getType() == entity.getType())
+                        .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
                     
-                    for (Entity entity : typeEntities) {
-                        try {
-                            if (entity == null || !entity.isValid()) {
-                                continue;
+                    clusteredSameType.add(entity); // 包含中心实体
+                    
+                    // 计算需要保留的数量
+                    int preserveCount = Math.max(1, (int) (clusteredSameType.size() * preserveRatio));
+                    int removeCount = clusteredSameType.size() - preserveCount;
+                    
+                    if (removeCount > 0) {
+                        // 添加到清理候选列表（移除最老的实体）
+                        clusteredSameType.sort((e1, e2) -> Integer.compare(e2.getTicksLived(), e1.getTicksLived()));
+                        
+                        for (int i = 0; i < removeCount && i < clusteredSameType.size(); i++) {
+                            Entity candidate = clusteredSameType.get(i);
+                            if (candidate != null && candidate.isValid() && !candidates.contains(candidate)) {
+                                candidates.add(candidate);
                             }
-                            
-                            if (isEntityClustered(entity, nearbyDistance, minClusterSize, true)) {
-                                // 获取聚集区域内的同类型实体
-                                List<Entity> clusteredSameType = entity.getNearbyEntities(nearbyDistance, nearbyDistance, nearbyDistance)
-                                    .stream()
-                                    .filter(e -> e != null && e.isValid() && e.getType() == entity.getType())
-                                    .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
-                                
-                                clusteredSameType.add(entity); // 包含中心实体
-                                
-                                // 计算需要保留的数量
-                                int preserveCount = Math.max(1, (int) (clusteredSameType.size() * preserveRatio));
-                                int removeCount = clusteredSameType.size() - preserveCount;
-                                
-                                if (removeCount > 0) {
-                                    // 添加到清理候选列表（移除最老的实体）
-                                    try {
-                                        clusteredSameType.sort((e1, e2) -> {
-                                            try {
-                                                return Integer.compare(e2.getTicksLived(), e1.getTicksLived());
-                                            } catch (Exception e) {
-                                                return 0;
-                                            }
-                                        });
-                                        
-                                        for (int i = 0; i < removeCount && i < clusteredSameType.size(); i++) {
-                                            Entity candidate = clusteredSameType.get(i);
-                                            if (candidate != null && candidate.isValid() && !candidates.contains(candidate)) {
-                                                candidates.add(candidate);
-                                            }
-                                        }
-                                    } catch (Exception e) {
-                                        // 排序或添加失败，跳过这个聚集
-                                        continue;
-                                    }
-                                }
-                            }
-                        } catch (Exception e) {
-                            // 跳过有问题的实体
-                            continue;
                         }
                     }
-                } catch (Exception e) {
-                    // 跳过有问题的类型组
-                    continue;
                 }
             }
-            
-            return candidates;
-        } catch (Exception e) {
-            // 返回空列表以避免影响正常流程
-            return new ArrayList<>();
         }
+        
+        return candidates;
     }
     
     /**
@@ -317,49 +286,6 @@ public class ClusterDetector {
      * @return 是否应该被保护
      */
     public static boolean shouldProtectEntity(Entity entity) {
-        try {
-            if (entity == null || !entity.isValid()) {
-                return false;
-            }
-            
-            // 保护有自定义名称的实体
-            try {
-                if (entity.getCustomName() != null) {
-                    return true;
-                }
-            } catch (Exception e) {
-                // 获取自定义名称失败，继续其他检查
-            }
-            
-            // 保护被玩家骑乘的实体
-            try {
-                if (!entity.getPassengers().isEmpty()) {
-                    return entity.getPassengers().stream()
-                        .anyMatch(passenger -> {
-                            try {
-                                return passenger instanceof org.bukkit.entity.Player;
-                            } catch (Exception e) {
-                                return false;
-                            }
-                        });
-                }
-            } catch (Exception e) {
-                // 获取乘客信息失败，继续其他检查
-            }
-            
-            // 保护拴绳实体
-            try {
-                if (entity instanceof org.bukkit.entity.LivingEntity livingEntity) {
-                    return livingEntity.isLeashed();
-                }
-            } catch (Exception e) {
-                // 检查拴绳状态失败，继续其他检查
-            }
-            
-            return false;
-        } catch (Exception e) {
-            // 默认保护有问题的实体
-            return true;
-        }
+        return EntityTypeUtils.isProtectedEntity(entity);
     }
 }

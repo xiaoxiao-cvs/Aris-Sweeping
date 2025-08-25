@@ -147,4 +147,11 @@ public class ArisSweeping extends JavaPlugin {
     public LivestockDensityHandler getLivestockHandler() {
         return livestockHandler;
     }
+    
+    /**
+     * 检查主清理是否正在运行
+     */
+    public boolean isMainCleanupRunning() {
+        return cleanupHandler != null && cleanupHandler.getTaskStatusInfo().contains("清理进行中: 是");
+    }
 }

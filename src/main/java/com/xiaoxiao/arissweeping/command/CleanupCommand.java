@@ -40,52 +40,45 @@ public class CleanupCommand implements CommandExecutor {
     
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        try {
-            // 检查基础权限
-            if (!hasAnyPermission(sender)) {
-                sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 老师~没有权限指挥爱丽丝哦~");
-                return true;
-            }
-            
-            if (args.length == 0) {
+        // 检查基础权限
+        if (!hasAnyPermission(sender)) {
+            sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 老师~没有权限指挥爱丽丝哦~");
+            return true;
+        }
+        
+        if (args.length == 0) {
+            sendHelp(sender);
+            return true;
+        }
+        
+        String subCommand = args[0].toLowerCase();
+        switch (subCommand) {
+            case "cleanup":
+                cleanupExecutor.handleCleanupCommand(sender, args);
+                break;
+            case "stats":
+                statsHandler.handleStatsCommand(sender);
+                break;
+            case "tps":
+                statsHandler.handleTpsCommand(sender);
+                break;
+            case "config":
+                configHandler.handleConfigCommand(sender, args);
+                break;
+            case "toggle":
+                configHandler.handleToggleCommand(sender);
+                break;
+            case "permission":
+                permissionCommandHandler.handlePermissionCommand(sender, args);
+                break;
+            case "test":
+                handleTestCommand(sender, args);
+                break;
+            // livestock-stats命令已移除，现在使用YAML配置和Spark API自动监控
+            case "help":
+            default:
                 sendHelp(sender);
-                return true;
-            }
-            
-            String subCommand = args[0].toLowerCase();
-            switch (subCommand) {
-                case "cleanup":
-                    cleanupExecutor.handleCleanupCommand(sender, args);
-                    break;
-                case "stats":
-                    statsHandler.handleStatsCommand(sender);
-                    break;
-                case "tps":
-                    statsHandler.handleTpsCommand(sender);
-                    break;
-                case "config":
-                    configHandler.handleConfigCommand(sender, args);
-                    break;
-                case "toggle":
-                    configHandler.handleToggleCommand(sender);
-                    break;
-                case "permission":
-                    permissionCommandHandler.handlePermissionCommand(sender, args);
-                    break;
-                case "test":
-                    handleTestCommand(sender, args);
-                    break;
-                // livestock-stats命令已移除，现在使用YAML配置和Spark API自动监控
-                case "help":
-                default:
-                    sendHelp(sender);
-                    break;
-            }
-            
-        } catch (Exception e) {
-            sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 爱丽丝出错了: " + e.getMessage());
-            plugin.getLogger().severe("命令执行出错: " + e.getMessage());
-            e.printStackTrace();
+                break;
         }
         
         return true;
@@ -95,7 +88,7 @@ public class CleanupCommand implements CommandExecutor {
      * 处理测试命令
      */
     private void handleTestCommand(CommandSender sender, String[] args) {
-        if (!hasPermission(sender, PermissionManager.ADMIN)) {
+        if (!permissionManager.hasPermission(sender, PermissionManager.ADMIN)) {
             sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 老师~没有权限使用测试功能哦~");
             return;
         }
@@ -173,24 +166,24 @@ public class CleanupCommand implements CommandExecutor {
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(ChatColor.AQUA + "========== [邦邦卡邦！] 爱丽丝帮助 ==========");
         
-        if (hasPermission(sender, PermissionManager.CLEANUP)) {
+        if (permissionManager.hasPermission(sender, PermissionManager.CLEANUP)) {
             sender.sendMessage(ChatColor.YELLOW + "/cleanup cleanup items" + ChatColor.WHITE + " - 清理掉落物品");
             sender.sendMessage(ChatColor.YELLOW + "/cleanup cleanup mobs" + ChatColor.WHITE + " - 清理敌对生物");
             sender.sendMessage(ChatColor.YELLOW + "/cleanup cleanup all" + ChatColor.WHITE + " - 强制清理所有实体");
         }
         
-        if (hasPermission(sender, PermissionManager.STATS)) {
+        if (permissionManager.hasPermission(sender, PermissionManager.STATS)) {
             sender.sendMessage(ChatColor.YELLOW + "/cleanup stats" + ChatColor.WHITE + " - 查看服务器统计");
             sender.sendMessage(ChatColor.YELLOW + "/cleanup tps" + ChatColor.WHITE + " - 查看TPS状态");
             sender.sendMessage(ChatColor.YELLOW + "/cleanup livestock-stats" + ChatColor.WHITE + " - 查看Spark增强版畜牧业统计");
         }
         
-        if (hasPermission(sender, PermissionManager.CONFIG)) {
+        if (permissionManager.hasPermission(sender, PermissionManager.CONFIG)) {
             sender.sendMessage(ChatColor.YELLOW + "/cleanup config" + ChatColor.WHITE + " - 配置插件设置");
             sender.sendMessage(ChatColor.YELLOW + "/cleanup toggle" + ChatColor.WHITE + " - 切换插件开关");
         }
         
-        if (hasPermission(sender, PermissionManager.ADMIN)) {
+        if (permissionManager.hasPermission(sender, PermissionManager.ADMIN)) {
             sender.sendMessage(ChatColor.YELLOW + "/cleanup permission" + ChatColor.WHITE + " - 权限管理");
             sender.sendMessage(ChatColor.YELLOW + "/cleanup test" + ChatColor.WHITE + " - 测试功能");
         }
@@ -223,11 +216,5 @@ public class CleanupCommand implements CommandExecutor {
     /**
      * 检查权限
      */
-    private boolean hasPermission(CommandSender sender, String permission) {
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
-            return permissionManager.hasPermission(player.getName(), permission) || player.hasPermission(permission);
-        }
-        return true; // 控制台总是有权限
-    }
+    // 权限检查方法已移至PermissionManager统一处理
 }

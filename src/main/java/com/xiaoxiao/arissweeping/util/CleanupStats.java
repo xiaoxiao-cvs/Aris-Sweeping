@@ -1,6 +1,7 @@
 package com.xiaoxiao.arissweeping.util;
 
 import org.bukkit.entity.*;
+import com.xiaoxiao.arissweeping.util.EntityTypeUtils.CleanupEntityType;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -13,18 +14,26 @@ public class CleanupStats {
     private final AtomicInteger otherEntitiesCleaned = new AtomicInteger(0);
     
     public void incrementType(Entity entity) {
-        if (entity instanceof Item) {
-            itemsCleaned.incrementAndGet();
-        } else if (entity instanceof ExperienceOrb) {
-            experienceOrbsCleaned.incrementAndGet();
-        } else if (entity instanceof Arrow) {
-            arrowsCleaned.incrementAndGet();
-        } else if (entity instanceof org.bukkit.entity.FallingBlock) {
-            fallingBlocksCleaned.incrementAndGet();
-        } else if (entity instanceof Monster || entity instanceof Animals) {
-            mobsCleaned.incrementAndGet();
-        } else {
-            otherEntitiesCleaned.incrementAndGet();
+        CleanupEntityType type = EntityTypeUtils.getCleanupType(entity);
+        switch (type) {
+            case ITEM:
+                itemsCleaned.incrementAndGet();
+                break;
+            case EXPERIENCE_ORB:
+                experienceOrbsCleaned.incrementAndGet();
+                break;
+            case ARROW:
+                arrowsCleaned.incrementAndGet();
+                break;
+            case FALLING_BLOCK:
+                fallingBlocksCleaned.incrementAndGet();
+                break;
+            case MOB:
+                mobsCleaned.incrementAndGet();
+                break;
+            default:
+                otherEntitiesCleaned.incrementAndGet();
+                break;
         }
     }
     
@@ -52,22 +61,7 @@ public class CleanupStats {
         otherEntitiesCleaned.incrementAndGet();
     }
     
-    // 为了兼容性添加的方法
-    public void incrementItemsRemoved() {
-        itemsCleaned.incrementAndGet();
-    }
-    
-    public void incrementExperienceOrbsRemoved() {
-        experienceOrbsCleaned.incrementAndGet();
-    }
-    
-    public void incrementArrowsRemoved() {
-        arrowsCleaned.incrementAndGet();
-    }
-    
-    public void incrementMobsRemoved() {
-        mobsCleaned.incrementAndGet();
-    }
+    // 冗余的'Removed'后缀方法已移除，请使用对应的标准方法
     
     public int getItemsCleaned() {
         return itemsCleaned.get();
@@ -93,26 +87,26 @@ public class CleanupStats {
         return otherEntitiesCleaned.get();
     }
     
-    // 为了兼容性添加的getter方法
-    public int getItemsRemoved() {
-        return itemsCleaned.get();
-    }
-    
-    public int getExperienceOrbsRemoved() {
-        return experienceOrbsCleaned.get();
-    }
-    
-    public int getArrowsRemoved() {
-        return arrowsCleaned.get();
-    }
-    
-    public int getMobsRemoved() {
-        return mobsCleaned.get();
-    }
+    // 冗余的'Removed'后缀getter方法已移除，请使用对应的标准getter方法
     
     public int getTotalCleaned() {
         return itemsCleaned.get() + experienceOrbsCleaned.get() + 
                arrowsCleaned.get() + fallingBlocksCleaned.get() + mobsCleaned.get() + otherEntitiesCleaned.get();
+    }
+    
+    /**
+     * 合并另一个CleanupStats的统计信息
+     * @param other 要合并的统计信息
+     */
+    public void merge(CleanupStats other) {
+        if (other != null) {
+            itemsCleaned.addAndGet(other.getItemsCleaned());
+            experienceOrbsCleaned.addAndGet(other.getExperienceOrbsCleaned());
+            arrowsCleaned.addAndGet(other.getArrowsCleaned());
+            fallingBlocksCleaned.addAndGet(other.getFallingBlocksCleaned());
+            mobsCleaned.addAndGet(other.getMobsCleaned());
+            otherEntitiesCleaned.addAndGet(other.getOtherEntitiesCleaned());
+        }
     }
     
     @Override

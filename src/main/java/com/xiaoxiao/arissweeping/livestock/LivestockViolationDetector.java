@@ -1,8 +1,8 @@
 package com.xiaoxiao.arissweeping.livestock;
 
 import com.xiaoxiao.arissweeping.config.ModConfig;
-import com.xiaoxiao.arissweeping.util.EntityHotspotDetector.LivestockHotspotInfo;
-import com.xiaoxiao.arissweeping.util.EntityHotspotDetector.LivestockStatistics;
+import com.xiaoxiao.arissweeping.util.LivestockHotspotInfo;
+import com.xiaoxiao.arissweeping.util.LivestockStatistics;
 import org.bukkit.entity.EntityType;
 
 import java.util.HashMap;
@@ -59,19 +59,14 @@ public class LivestockViolationDetector {
      */
     private void handleViolations(Map<String, LivestockViolationInfo> violations, 
                                 LivestockCleanupManager cleanupManager) {
-        try {
-            Map<String, LivestockViolationInfo> filteredViolations = filterRecentWarnings(violations);
-            
-            if (!filteredViolations.isEmpty()) {
-                cleanupManager.sendWarningMessage(filteredViolations);
-                cleanupManager.scheduleCleanup(filteredViolations);
-                recordWarningTimes(filteredViolations);
-            } else if (config.isDebugMode()) {
-                config.getPlugin().getLogger().info("[LivestockViolationDetector] 所有违规位置都在冷却期内，跳过重复警告");
-            }
-        } catch (Exception e) {
-            config.getPlugin().getLogger().severe("[LivestockViolationDetector] 处理违规时发生异常: " + e.getMessage());
-            e.printStackTrace();
+        Map<String, LivestockViolationInfo> filteredViolations = filterRecentWarnings(violations);
+        
+        if (!filteredViolations.isEmpty()) {
+            cleanupManager.sendWarningMessage(filteredViolations);
+            cleanupManager.scheduleCleanup(filteredViolations);
+            recordWarningTimes(filteredViolations);
+        } else if (config.isDebugMode()) {
+            config.getPlugin().getLogger().info("[LivestockViolationDetector] 所有违规位置都在冷却期内，跳过重复警告");
         }
     }
     
@@ -165,7 +160,7 @@ public class LivestockViolationDetector {
             case TURTLE:
             case PANDA:
             case POLAR_BEAR:
-            case MUSHROOM_COW:
+            case MOOSHROOM:
                 return true;
             default:
                 return false;

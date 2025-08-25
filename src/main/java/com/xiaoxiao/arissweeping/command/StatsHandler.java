@@ -4,6 +4,8 @@ import com.xiaoxiao.arissweeping.ArisSweeping;
 import com.xiaoxiao.arissweeping.config.ModConfig;
 import com.xiaoxiao.arissweeping.permission.PermissionManager;
 import com.xiaoxiao.arissweeping.util.EntityHotspotDetector;
+import com.xiaoxiao.arissweeping.util.LivestockHotspotInfo;
+import com.xiaoxiao.arissweeping.util.LivestockStatistics;
 import me.lucko.spark.api.Spark;
 import me.lucko.spark.api.SparkProvider;
 import me.lucko.spark.api.statistic.StatisticWindow;
@@ -54,7 +56,7 @@ public class StatsHandler {
      */
     public void handleStatsCommand(CommandSender sender) {
         // 检查权限
-        if (!hasPermission(sender, PermissionManager.STATS)) {
+        if (!permissionManager.hasPermission(sender, PermissionManager.STATS)) {
             sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 老师~没有权限查看统计哦~");
             return;
         }
@@ -147,7 +149,7 @@ public class StatsHandler {
      */
     public void handleTpsCommand(CommandSender sender) {
         // 检查权限
-        if (!hasPermission(sender, PermissionManager.STATS)) {
+        if (!permissionManager.hasPermission(sender, PermissionManager.STATS)) {
             sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 老师~没有权限查看TPS哦~");
             return;
         }
@@ -252,7 +254,7 @@ public class StatsHandler {
      */
     public void handleLivestockStatsCommand(CommandSender sender) {
         // 检查权限
-        if (!hasPermission(sender, PermissionManager.STATS)) {
+        if (!permissionManager.hasPermission(sender, PermissionManager.STATS)) {
             sender.sendMessage(ChatColor.RED + "[邦邦卡邦！] 老师~没有权限查看畜牧业统计哦~");
             return;
         }
@@ -262,7 +264,7 @@ public class StatsHandler {
         // 使用新的Spark API增强版畜牧业热点检测
         hotspotDetector.scanLivestockHotspotsAsync(new EntityHotspotDetector.LivestockScanCallback() {
             @Override
-            public void onComplete(java.util.List<EntityHotspotDetector.LivestockHotspotInfo> hotspots, EntityHotspotDetector.LivestockStatistics statistics) {
+            public void onComplete(java.util.List<LivestockHotspotInfo> hotspots, LivestockStatistics statistics) {
                 processEnhancedLivestockStats(sender, hotspots, statistics);
             }
             
@@ -277,7 +279,7 @@ public class StatsHandler {
     /**
      * 处理Spark API增强版畜牧业统计结果
      */
-    private void processEnhancedLivestockStats(CommandSender sender, java.util.List<EntityHotspotDetector.LivestockHotspotInfo> hotspots, EntityHotspotDetector.LivestockStatistics statistics) {
+    private void processEnhancedLivestockStats(CommandSender sender, java.util.List<LivestockHotspotInfo> hotspots, LivestockStatistics statistics) {
         try {
             // 使用Spark API增强版统计数据
             Map<String, Integer> worldAnimalStats = new HashMap<>();
@@ -303,7 +305,7 @@ public class StatsHandler {
             }
             
             // 处理LivestockHotspotInfo数据
-            for (EntityHotspotDetector.LivestockHotspotInfo hotspot : hotspots) {
+            for (LivestockHotspotInfo hotspot : hotspots) {
                 String worldName = hotspot.getWorldName();
                 int animalCount = hotspot.getTotalAnimals();
                 
@@ -384,13 +386,13 @@ public class StatsHandler {
                 message.append(ChatColor.WHITE).append("\n");
                 message.append(ChatColor.RED).append("Spark检测到的高密度区块:\n");
                 
-                java.util.List<EntityHotspotDetector.LivestockHotspotInfo> topViolations = hotspots.stream()
+                java.util.List<LivestockHotspotInfo> topViolations = hotspots.stream()
                     .filter(h -> h.getTotalAnimals() > config.getMaxAnimalsPerChunk())
                     .sorted((a, b) -> Double.compare(b.getPerformanceImpact(), a.getPerformanceImpact()))
                     .limit(5)
                     .collect(Collectors.toList());
                 
-                for (EntityHotspotDetector.LivestockHotspotInfo hotspot : topViolations) {
+                for (LivestockHotspotInfo hotspot : topViolations) {
                     String coordinates = String.format("(%d, %d)", hotspot.getChunkX() * 16, hotspot.getChunkZ() * 16);
                     
                     ChatColor impactColor = hotspot.getPerformanceImpact() <= 0.1 ? ChatColor.YELLOW :
@@ -440,7 +442,7 @@ public class StatsHandler {
             case FOX:
             case BEE:
             case POLAR_BEAR:
-            case MUSHROOM_COW:
+            case MOOSHROOM:
             case GOAT:
             case AXOLOTL:
                 return true;
@@ -549,11 +551,5 @@ public class StatsHandler {
     /**
      * 检查权限
      */
-    private boolean hasPermission(CommandSender sender, String permission) {
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
-            return permissionManager.hasPermission(player.getName(), permission) || player.hasPermission(permission);
-        }
-        return true; // 控制台总是有权限
-    }
+    // 权限检查方法已移至PermissionManager统一处理
 }

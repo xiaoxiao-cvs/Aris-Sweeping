@@ -1,10 +1,14 @@
 package com.xiaoxiao.arissweeping.handler;
 
 import com.xiaoxiao.arissweeping.ArisSweeping;
+import com.xiaoxiao.arissweeping.cleanup.CleanupServiceManager;
 import com.xiaoxiao.arissweeping.config.ModConfig;
 import com.xiaoxiao.arissweeping.util.CleanupStats;
 import com.xiaoxiao.arissweeping.util.ClusterDetector;
 import com.xiaoxiao.arissweeping.util.TpsMonitor;
+import com.xiaoxiao.arissweeping.util.CleanupStateManager;
+import com.xiaoxiao.arissweeping.util.CleanupStateManager.CleanupType;
+import com.xiaoxiao.arissweeping.util.EntityTypeUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -27,15 +31,17 @@ public class EntityCleanupHandler implements Listener {
     private final ArisSweeping plugin;
     private final ModConfig config;
     private final TpsMonitor tpsMonitor;
+    private final CleanupStateManager stateManager;
+    private final CleanupServiceManager serviceManager;
     private BukkitTask cleanupTask;
     private BukkitTask densityCheckTask;
-    private final AtomicBoolean isCleanupRunning = new AtomicBoolean(false);
-    private final AtomicBoolean isEmergencyCleanupRunning = new AtomicBoolean(false);
     
     public EntityCleanupHandler(ArisSweeping plugin) {
         this.plugin = plugin;
         this.config = plugin.getModConfig();
         this.tpsMonitor = new TpsMonitor(plugin);
+        this.stateManager = CleanupStateManager.getInstance();
+        this.serviceManager = new CleanupServiceManager(plugin);
     }
     
     public void init() {
@@ -54,9 +60,8 @@ public class EntityCleanupHandler implements Listener {
             plugin.getLogger().warning("Configuration validation failed, using default values: " + e.getMessage());
         }
         
-        // 初始化状态
-        isCleanupRunning.set(false);
-        isEmergencyCleanupRunning.set(false);
+        // 初始化状态管理器
+        // 状态管理现在由CleanupStateManager统一处理
         
         // 启动定时清理任务
         try {
@@ -304,7 +309,7 @@ public class EntityCleanupHandler implements Listener {
                             plugin.getLogger().info("Cleanup task #" + executionCount + " triggered (interval: " + intervalSeconds + "s)");
                             
                             try {
-                                if (!isCleanupRunning.get()) {
+                                if (!stateManager.isCleanupRunning(CleanupStateManager.CleanupType.STANDARD)) {
                                     // 启动倒计时系统（仿照EC）
                                     startCleanupCountdown();
                                 } else {
@@ -793,92 +798,22 @@ public class EntityCleanupHandler implements Listener {
             return;
         }
         
-        if (!isCleanupRunning.compareAndSet(false, true)) {
-            plugin.getLogger().info("Cleanup already running, skipping");
-            return;
-        }
-        
-        try {
-            plugin.getLogger().info("Starting cleanup process... (async: " + config.isAsyncCleanup() + ")");
-            CleanupStats stats = new CleanupStats();
-            
-            if (config.isAsyncCleanup()) {
-                // 异步清理
-                CompletableFuture.runAsync(() -> {
-                    plugin.getLogger().info("Starting async cleanup");
-                    
-                    try {
-                        for (World world : Bukkit.getWorlds()) {
-                            // 在异步任务中也要检查全局开关
-                            if (!config.isPluginEnabled()) {
-                                plugin.getLogger().info("Async cleanup cancelled - plugin disabled during execution");
-                                return;
-                            }
-                            
-                            cleanupWorldAsync(world, stats);
-                            // 在世界之间添加小延迟，避免一次性处理过多实体
-                            try {
-                                Thread.sleep(config.getBatchDelay() * 5); // 世界间延迟为批次延迟的5倍
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                                plugin.getLogger().warning("Async cleanup interrupted");
-                                return;
-                            }
-                        }
-                        
-                        // 在主线程中处理通知和重置标志
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    plugin.getLogger().info("Async cleanup completed: " + stats.toString());
-                                    handleCleanupNotification(stats);
-                                } finally {
-                                    isCleanupRunning.set(false);
-                                }
-                            }
-                        }.runTask(plugin);
-                        
-                    } catch (Exception e) {
-                        plugin.getLogger().severe("Error during async cleanup: " + e.getMessage());
-                        e.printStackTrace();
-                        // 确保在异常情况下也重置标志
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                isCleanupRunning.set(false);
-                            }
-                        }.runTask(plugin);
+        // 使用新的服务架构执行清理
+        serviceManager.executeCleanup(CleanupType.STANDARD, null, config.isAsyncCleanup())
+            .thenAccept(stats -> {
+                // 在主线程中处理通知
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        handleCleanupNotification(stats);
                     }
-                });
-            } else {
-                // 同步清理
-                try {
-                    for (World world : Bukkit.getWorlds()) {
-                        // 在同步清理中也要检查全局开关
-                        if (!config.isPluginEnabled()) {
-                            plugin.getLogger().info("Sync cleanup cancelled - plugin disabled during execution");
-                            return;
-                        }
-                        
-                        cleanupWorldSync(world, stats);
-                    }
-                    
-                    plugin.getLogger().info("Sync cleanup completed: " + stats.toString());
-                    handleCleanupNotification(stats);
-                    
-                } catch (Exception e) {
-                    plugin.getLogger().severe("Error during sync cleanup: " + e.getMessage());
-                    e.printStackTrace();
-                }
-            }
-            
-        } finally {
-            if (!config.isAsyncCleanup()) {
-                isCleanupRunning.set(false);
-            }
-            // 异步模式下的标志重置已移到异步任务的回调中
-        }
+                }.runTask(plugin);
+            })
+            .exceptionally(throwable -> {
+                plugin.getLogger().severe("Error during cleanup: " + throwable.getMessage());
+                throwable.printStackTrace();
+                return null;
+            });
     }
     
     /**
@@ -961,11 +896,13 @@ public class EntityCleanupHandler implements Listener {
                         }.runTask(plugin);
                         
                         // 批次间延迟，避免卡顿
-                        try {
-                            Thread.sleep(config.getBatchDelay());
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            break;
+                        if (config.getBatchDelay() > 0) {
+                            try {
+                                Thread.sleep(config.getBatchDelay());
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                break;
+                            }
                         }
                     }
                 } catch (Exception e) {
@@ -1131,17 +1068,8 @@ public class EntityCleanupHandler implements Listener {
                 return false;
             }
             
-            // 排除特殊实体：矿车、船只、盔甲架等
-            try {
-                if (entity instanceof org.bukkit.entity.Minecart ||
-                    entity instanceof org.bukkit.entity.Boat ||
-                    entity instanceof org.bukkit.entity.ArmorStand ||
-                    entity instanceof org.bukkit.entity.ItemFrame ||
-                    entity instanceof org.bukkit.entity.Painting) {
-                    return false;
-                }
-            } catch (Exception e) {
-                plugin.getLogger().warning("检查特殊实体类型时发生错误: " + e.getMessage());
+            // 使用统一的保护实体判断
+            if (EntityTypeUtils.isProtectedEntity(entity)) {
                 return false;
             }
             
@@ -1166,33 +1094,18 @@ public class EntityCleanupHandler implements Listener {
             }
             
             // 经验球清理
-            if (entity instanceof ExperienceOrb) {
-                try {
-                    return config.isCleanupExperienceOrbs();
-                } catch (Exception e) {
-                    plugin.getLogger().warning("检查经验球清理配置时发生错误: " + e.getMessage());
-                    return false;
-                }
+            if (EntityTypeUtils.isCleanableExperienceOrb(entity)) {
+                return config.isCleanupExperienceOrbs();
             }
             
             // 箭矢清理（只清理普通箭矢，不清理三叉戟等特殊投射物）
-            if (entity instanceof Arrow) {
-                try {
-                    return config.isCleanupArrows();
-                } catch (Exception e) {
-                    plugin.getLogger().warning("检查箭矢清理配置时发生错误: " + e.getMessage());
-                    return false;
-                }
+            if (EntityTypeUtils.isCleanableArrow(entity)) {
+                return config.isCleanupArrows();
             }
             
             // 掉落物（掉落方块）清理
-            if (entity instanceof org.bukkit.entity.FallingBlock) {
-                try {
-                    return config.isCleanupFallingBlocks();
-                } catch (Exception e) {
-                    plugin.getLogger().warning("检查掉落方块清理配置时发生错误: " + e.getMessage());
-                    return false;
-                }
+            if (EntityTypeUtils.isCleanableFallingBlock(entity)) {
+                return config.isCleanupFallingBlocks();
             }
             
             // 敌对生物清理
@@ -1314,7 +1227,7 @@ public class EntityCleanupHandler implements Listener {
                 return;
             }
             
-            if (!isEmergencyCleanupRunning.compareAndSet(false, true)) {
+            if (!stateManager.tryStartCleanup(CleanupStateManager.CleanupType.EMERGENCY, "TPS_MONITOR")) {
                 plugin.getLogger().info("Emergency cleanup skipped - already running");
                 return; // 已经在运行紧急清理
             }
@@ -1431,7 +1344,7 @@ public class EntityCleanupHandler implements Listener {
             plugin.getLogger().severe("Critical error in performEmergencyCleanup: " + e.getMessage());
             e.printStackTrace();
         } finally {
-            isEmergencyCleanupRunning.set(false);
+            stateManager.completeCleanup(CleanupStateManager.CleanupType.EMERGENCY);
         }
     }
     
@@ -1552,8 +1465,8 @@ public class EntityCleanupHandler implements Listener {
         }
         
         // 清理状态
-        status.append("- 清理进行中: ").append(isCleanupRunning.get() ? "是" : "否").append("\n");
-        status.append("- 紧急清理进行中: ").append(isEmergencyCleanupRunning.get() ? "是" : "否");
+        status.append("- 清理进行中: ").append(stateManager.isCleanupRunning(CleanupStateManager.CleanupType.STANDARD) ? "是" : "否").append("\n");
+        status.append("- 紧急清理进行中: ").append(stateManager.isCleanupRunning(CleanupStateManager.CleanupType.EMERGENCY) ? "是" : "否");
         
         return status.toString();
     }

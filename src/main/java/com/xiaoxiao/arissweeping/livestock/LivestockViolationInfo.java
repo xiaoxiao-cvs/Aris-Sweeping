@@ -1,6 +1,6 @@
 package com.xiaoxiao.arissweeping.livestock;
 
-import com.xiaoxiao.arissweeping.util.EntityHotspotDetector.LivestockHotspotInfo;
+import com.xiaoxiao.arissweeping.util.LivestockHotspotInfo;
 import org.bukkit.entity.EntityType;
 
 import java.util.List;

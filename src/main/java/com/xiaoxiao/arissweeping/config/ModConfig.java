@@ -3,14 +3,70 @@ package com.xiaoxiao.arissweeping.config;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class ModConfig {
     private final JavaPlugin plugin;
     private FileConfiguration config;
+    
+    // 配置缓存，减少重复的配置文件访问
+    private final Map<String, Object> configCache = new ConcurrentHashMap<>();
+    private volatile long lastCacheUpdate = 0;
+    private static final long CACHE_REFRESH_INTERVAL = 30000; // 30秒缓存刷新间隔
     
     public ModConfig(JavaPlugin plugin) {
         this.plugin = plugin;
         this.config = plugin.getConfig();
         loadDefaults();
+        refreshCache();
+    }
+    
+    /**
+     * 刷新配置缓存
+     */
+    private void refreshCache() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastCacheUpdate > CACHE_REFRESH_INTERVAL) {
+            configCache.clear();
+            lastCacheUpdate = currentTime;
+            plugin.getLogger().fine("配置缓存已刷新");
+        }
+    }
+    
+    /**
+     * 从缓存获取配置值，如果缓存中没有则从配置文件读取并缓存
+     */
+    @SuppressWarnings("unchecked")
+    private <T> T getCachedValue(String path, T defaultValue, Class<T> type) {
+        refreshCache();
+        
+        Object cachedValue = configCache.get(path);
+        if (cachedValue != null && type.isInstance(cachedValue)) {
+            return (T) cachedValue;
+        }
+        
+        T value;
+        try {
+            if (type == Boolean.class) {
+                value = (T) Boolean.valueOf(config.getBoolean(path, (Boolean) defaultValue));
+            } else if (type == Integer.class) {
+                value = (T) Integer.valueOf(config.getInt(path, (Integer) defaultValue));
+            } else if (type == Double.class) {
+                value = (T) Double.valueOf(config.getDouble(path, (Double) defaultValue));
+            } else if (type == String.class) {
+                value = (T) config.getString(path, (String) defaultValue);
+            } else {
+                value = defaultValue;
+            }
+            
+            configCache.put(path, value);
+            return value;
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取配置 " + path + " 时发生错误，使用默认值: " + e.getMessage());
+            return defaultValue;
+        }
     }
     
     private void loadDefaults() {
@@ -83,7 +139,7 @@ public class ModConfig {
             config.addDefault("livestock.animalNames.POLAR_BEAR", "北极熊");
             config.addDefault("livestock.animalNames.TURTLE", "海龟");
             config.addDefault("livestock.animalNames.OCELOT", "豹猫");
-            config.addDefault("livestock.animalNames.MUSHROOM_COW", "哞菇");
+            config.addDefault("livestock.animalNames.MOOSHROOM", "哞菇");
             config.addDefault("livestock.animalNames.GOAT", "山羊");
             config.addDefault("livestock.animalNames.AXOLOTL", "美西螈");
             config.addDefault("livestock.animalNames.GLOW_SQUID", "发光鱿鱼");
@@ -160,19 +216,15 @@ public class ModConfig {
     
     // 基础设置
     public int getCleanupInterval() {
-        try {
-            int interval = config.getInt("general.cleanupInterval", 300);
-            return Math.max(interval, 10); // 确保最小值为10秒
-        } catch (Exception e) {
-            plugin.getLogger().warning("获取清理间隔配置时发生错误，使用默认值: " + e.getMessage());
-            return 300;
-        }
+        int interval = getCachedValue("general.cleanupInterval", 300, Integer.class);
+        return Math.max(interval, 10); // 确保最小值为10秒
     }
     
     public void setCleanupInterval(int interval) {
         try {
             config.set("general.cleanupInterval", interval);
             plugin.saveConfig();
+            configCache.put("general.cleanupInterval", interval); // 更新缓存
         } catch (Exception e) {
             plugin.getLogger().severe("保存清理间隔配置时发生错误: " + e.getMessage());
         }
@@ -235,48 +287,23 @@ public class ModConfig {
     
     // 实体清理设置
     public boolean isCleanupItems() {
-        try {
-            return config.getBoolean("entity_cleanup.cleanupItems", true);
-        } catch (Exception e) {
-            plugin.getLogger().warning("获取物品清理配置时发生错误，使用默认值: " + e.getMessage());
-            return true;
-        }
+        return getCachedValue("entity_cleanup.cleanupItems", true, Boolean.class);
     }
     
     public boolean isCleanupExperienceOrbs() {
-        try {
-            return config.getBoolean("entity_cleanup.cleanupExperienceOrbs", true);
-        } catch (Exception e) {
-            plugin.getLogger().warning("获取经验球清理配置时发生错误，使用默认值: " + e.getMessage());
-            return true;
-        }
+        return getCachedValue("entity_cleanup.cleanupExperienceOrbs", true, Boolean.class);
     }
     
     public boolean isCleanupArrows() {
-        try {
-            return config.getBoolean("entity_cleanup.cleanupArrows", true);
-        } catch (Exception e) {
-            plugin.getLogger().warning("获取箭矢清理配置时发生错误，使用默认值: " + e.getMessage());
-            return true;
-        }
+        return getCachedValue("entity_cleanup.cleanupArrows", true, Boolean.class);
     }
     
     public boolean isCleanupFallingBlocks() {
-        try {
-            return config.getBoolean("entity_cleanup.cleanupFallingBlocks", true);
-        } catch (Exception e) {
-            plugin.getLogger().warning("获取掉落方块清理配置时发生错误，使用默认值: " + e.getMessage());
-            return true;
-        }
+        return getCachedValue("entity_cleanup.cleanupFallingBlocks", true, Boolean.class);
     }
     
     public boolean isCleanupHostileMobs() {
-        try {
-            return config.getBoolean("entity_cleanup.cleanupHostileMobs", false);
-        } catch (Exception e) {
-            plugin.getLogger().warning("获取敌对生物清理配置时发生错误，使用默认值: " + e.getMessage());
-            return false;
-        }
+        return getCachedValue("entity_cleanup.cleanupHostileMobs", false, Boolean.class);
     }
     
     public boolean isCleanupPassiveMobs() {
@@ -310,13 +337,8 @@ public class ModConfig {
     }
     
     public int getItemAgeThreshold() {
-        try {
-            int value = config.getInt("thresholds.itemAgeThreshold", 60);
-            return Math.max(value, 10); // 确保最小值为10秒
-        } catch (Exception e) {
-            plugin.getLogger().warning("获取物品年龄阈值配置时发生错误，使用默认值: " + e.getMessage());
-            return 60;
-        }
+        int value = getCachedValue("thresholds.itemAgeThreshold", 60, Integer.class);
+        return Math.max(value, 10); // 确保最小值为10秒
     }
     
     // 清理阈值设置的setter方法
@@ -855,13 +877,8 @@ public class ModConfig {
     
     // 实体密度配置
     public int getEntityDensityThreshold() {
-        try {
-            int threshold = config.getInt("entity_density.threshold", 500);
-            return Math.max(threshold, 50); // 确保最小值为50
-        } catch (Exception e) {
-            plugin.getLogger().warning("获取实体密度阈值配置时发生错误，使用默认值: " + e.getMessage());
-            return 500;
-        }
+        int threshold = getCachedValue("entity_density.threshold", 500, Integer.class);
+        return Math.max(threshold, 50); // 确保最小值为50
     }
     
     // 实体密度配置的setter方法
@@ -869,6 +886,7 @@ public class ModConfig {
         try {
             config.set("entity_density.threshold", threshold);
             plugin.saveConfig();
+            configCache.put("entity_density.threshold", threshold); // 更新缓存
         } catch (Exception e) {
             plugin.getLogger().severe("保存实体密度阈值配置时发生错误: " + e.getMessage());
         }
@@ -888,7 +906,95 @@ public class ModConfig {
     }
     
     public String getString(String path, String defaultValue) {
-        return config.getString(path, defaultValue);
+        return getCachedValue(path, defaultValue, String.class);
+    }
+    
+    // 畜牧业区域配置
+    public boolean isLivestockRegionsEnabled() {
+        return getCachedValue("livestock.regions.enabled", false, Boolean.class);
+    }
+    
+    public String getLivestockPlayerTitle() {
+        try {
+            return config.getString("livestock.regions.playerTitle", "老师");
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取畜牧业玩家称呼配置时发生错误，使用默认值: " + e.getMessage());
+            return "老师";
+        }
+    }
+    
+    /**
+     * 获取畜牧业区域配置
+     */
+    public Map<String, Map<String, Object>> getLivestockRegionAreas() {
+        try {
+            Map<String, Map<String, Object>> areas = new HashMap<>();
+            
+            if (config.isConfigurationSection("livestock.regions.areas")) {
+                var areasSection = config.getConfigurationSection("livestock.regions.areas");
+                if (areasSection != null) {
+                    for (String areaKey : areasSection.getKeys(false)) {
+                        if (areasSection.isConfigurationSection(areaKey)) {
+                            var areaSection = areasSection.getConfigurationSection(areaKey);
+                            if (areaSection != null) {
+                                Map<String, Object> areaData = new HashMap<>();
+                                areaData.put("name", areaSection.getString("name", areaKey));
+                                areaData.put("world", areaSection.getString("world", "world"));
+                                areaData.put("x1", areaSection.getInt("x1", 0));
+                                areaData.put("z1", areaSection.getInt("z1", 0));
+                                areaData.put("x2", areaSection.getInt("x2", 0));
+                                areaData.put("z2", areaSection.getInt("z2", 0));
+                                areas.put(areaKey, areaData);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return areas;
+        } catch (Exception e) {
+            plugin.getLogger().warning("获取畜牧业区域配置时发生错误: " + e.getMessage());
+            return new HashMap<>();
+        }
+    }
+    
+    /**
+     * 根据坐标查找所属区域
+     */
+    public String findRegionByCoordinates(String worldName, int x, int z) {
+        if (!isLivestockRegionsEnabled()) {
+            return null;
+        }
+        
+        Map<String, Map<String, Object>> areas = getLivestockRegionAreas();
+        
+        for (Map.Entry<String, Map<String, Object>> entry : areas.entrySet()) {
+            Map<String, Object> areaData = entry.getValue();
+            String areaWorld = (String) areaData.get("world");
+            
+            // 检查世界是否匹配
+            if (!worldName.equals(areaWorld)) {
+                continue;
+            }
+            
+            int x1 = (Integer) areaData.get("x1");
+            int z1 = (Integer) areaData.get("z1");
+            int x2 = (Integer) areaData.get("x2");
+            int z2 = (Integer) areaData.get("z2");
+            
+            // 确保坐标顺序正确
+            int minX = Math.min(x1, x2);
+            int maxX = Math.max(x1, x2);
+            int minZ = Math.min(z1, z2);
+            int maxZ = Math.max(z1, z2);
+            
+            // 检查坐标是否在区域内
+            if (x >= minX && x <= maxX && z >= minZ && z <= maxZ) {
+                return (String) areaData.get("name");
+            }
+        }
+        
+        return null;
     }
     
     // 实体最小年龄配置
@@ -961,13 +1067,8 @@ public class ModConfig {
     }
     
     public int getConsecutiveLowTpsThreshold() {
-        try {
-            int value = config.getInt("tps_monitoring.consecutiveLowTpsThreshold", 3);
-            return Math.max(value, 1); // 确保最小值为1
-        } catch (Exception e) {
-            plugin.getLogger().warning("获取连续低TPS阈值配置时发生错误，使用默认值: " + e.getMessage());
-            return 3;
-        }
+        int value = getCachedValue("tps_monitoring.consecutiveLowTpsThreshold", 3, Integer.class);
+        return Math.max(value, 1); // 确保最小值为1
     }
     
     public double getLowTpsCleanupIntensity() {
@@ -1245,6 +1346,8 @@ public class ModConfig {
                 return getString(path, "&e位置: &f{region} &7({world} {x}, {z})");
             case "violation":
                 return getString(path, "&c超标情况: &f当前 {current} 只，限制 {limit} 只 &c(超出 {excess} 只)");
+            case "violation_header":
+                return getString(path, "&6▶ [超标情况]");
             case "details":
                 return getString(path, "&6详细信息:");
             case "total_animals":

@@ -2,8 +2,8 @@ package com.xiaoxiao.arissweeping.handler;
 
 import com.xiaoxiao.arissweeping.config.ModConfig;
 import com.xiaoxiao.arissweeping.livestock.*;
-import com.xiaoxiao.arissweeping.util.EntityHotspotDetector.LivestockStatistics;
-import com.xiaoxiao.arissweeping.util.EntityHotspotDetector.SparkEntityMetrics;
+import com.xiaoxiao.arissweeping.util.LivestockStatistics;
+import com.xiaoxiao.arissweeping.util.SparkEntityMetrics;
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -21,6 +21,10 @@ public class LivestockDensityHandler {
     private final LivestockCleanupManager cleanupManager;
     private final LivestockPerformanceAnalyzer performanceAnalyzer;
     
+    // 调度和服务组件
+    private final LivestockScheduler scheduler;
+    private final LivestockSmartCleanupService smartCleanupService;
+    
     /**
      * 构造函数
      */
@@ -35,6 +39,14 @@ public class LivestockDensityHandler {
             this.cleanupManager = new LivestockCleanupManager(plugin, config);
             this.performanceAnalyzer = new LivestockPerformanceAnalyzer(config);
             
+            // 创建热点检测器
+            com.xiaoxiao.arissweeping.util.EntityHotspotDetector hotspotDetector = 
+                new com.xiaoxiao.arissweeping.util.EntityHotspotDetector((com.xiaoxiao.arissweeping.ArisSweeping) plugin);
+            
+            // 初始化调度和服务组件
+            this.smartCleanupService = new LivestockSmartCleanupService(plugin, config, hotspotDetector, performanceAnalyzer, cleanupManager);
+            this.scheduler = new LivestockScheduler(plugin, config, monitor, smartCleanupService);
+            
             plugin.getLogger().info("[LivestockDensityHandler] 成功初始化重构版畜牧业密度处理器");
         } catch (Exception e) {
             plugin.getLogger().severe("[LivestockDensityHandler] 初始化畜牧业密度处理器失败: " + e.getMessage());
@@ -48,21 +60,21 @@ public class LivestockDensityHandler {
      * 启动智能畜牧业监控系统
      */
     public void startLivestockMonitoring() {
-        monitor.startMonitoring();
+        scheduler.startScheduling();
     }
     
     /**
      * 停止智能畜牧业监控系统
      */
     public void stopLivestockMonitoring() {
-        monitor.stopMonitoring();
+        scheduler.stopScheduling();
     }
     
     /**
      * 重启畜牧业监控
      */
     public void restartLivestockMonitoring() {
-        monitor.restartMonitoring();
+        scheduler.restartScheduling();
     }
     
     /**
@@ -80,7 +92,8 @@ public class LivestockDensityHandler {
         status.append("=== 畜牧业密度管理状态 ===\n");
         status.append(monitor.getStatusInfo());
         status.append("\n");
-        status.append(cleanupManager.getStatusInfo());
+        status.append("调度器状态: ").append(scheduler.isScheduling() ? "运行中" : "已停止").append("\n");
+        status.append("智能清理服务: ").append(config.isSmartCleanupEnabled() ? "启用" : "禁用").append("\n");
         status.append("\n");
         
         // 性能分析信息
@@ -111,7 +124,7 @@ public class LivestockDensityHandler {
      * 检查清理是否正在运行
      */
     public boolean isCleanupRunning() {
-        return monitor.isCleanupRunning();
+        return cleanupManager.isCleanupRunning();
     }
     
     // ==================== 向后兼容性方法 ====================
@@ -168,6 +181,20 @@ public class LivestockDensityHandler {
      */
     public LivestockPerformanceAnalyzer getPerformanceAnalyzer() {
         return performanceAnalyzer;
+    }
+    
+    /**
+     * 获取调度器组件
+     */
+    public LivestockScheduler getScheduler() {
+        return scheduler;
+    }
+    
+    /**
+     * 获取智能清理服务组件
+     */
+    public LivestockSmartCleanupService getSmartCleanupService() {
+        return smartCleanupService;
     }
     
     // ==================== 高级功能方法 ====================
@@ -278,20 +305,29 @@ public class LivestockDensityHandler {
             boolean allHealthy = true;
             
             // 检查监控器
-            try {
-                monitor.getLastStatistics();
-            } catch (Exception e) {
-                plugin.getLogger().warning("[LivestockDensityHandler] 监控器检查失败: " + e.getMessage());
-                allHealthy = false;
-            }
-            
-            // 检查性能分析器
-            try {
-                performanceAnalyzer.getBaselineMetrics();
-            } catch (Exception e) {
-                plugin.getLogger().warning("[LivestockDensityHandler] 性能分析器检查失败: " + e.getMessage());
-                allHealthy = false;
-            }
+        try {
+            monitor.getLastStatistics();
+        } catch (Exception e) {
+            plugin.getLogger().warning("[LivestockDensityHandler] 监控器检查失败: " + e.getMessage());
+            allHealthy = false;
+        }
+        
+        // 检查调度器
+        try {
+            scheduler.isScheduling();
+        } catch (Exception e) {
+            plugin.getLogger().warning("[LivestockDensityHandler] 调度器检查失败: " + e.getMessage());
+            allHealthy = false;
+        }
+        
+        // 检查智能清理服务
+        try {
+            // 智能清理服务状态检查 - 检查服务是否正常工作
+            smartCleanupService.getStatusInfo();
+        } catch (Exception e) {
+            plugin.getLogger().warning("[LivestockDensityHandler] 智能清理服务检查失败: " + e.getMessage());
+            allHealthy = false;
+        }
             
             if (allHealthy) {
                 plugin.getLogger().info("[LivestockDensityHandler] 系统自检通过");

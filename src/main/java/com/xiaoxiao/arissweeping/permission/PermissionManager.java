@@ -247,4 +247,29 @@ public class PermissionManager {
             e.printStackTrace();
         }
     }
+    
+    /**
+     * 统一的权限检查方法，用于CommandSender
+     * @param sender 命令发送者
+     * @param permission 权限节点
+     * @return 是否有权限
+     */
+    public boolean hasPermission(org.bukkit.command.CommandSender sender, String permission) {
+        try {
+            if (sender == null || permission == null) {
+                return false;
+            }
+            
+            if (sender instanceof org.bukkit.entity.Player) {
+                org.bukkit.entity.Player player = (org.bukkit.entity.Player) sender;
+                return hasPermission(player.getName(), permission) || player.hasPermission(permission);
+            } else {
+                // 控制台始终有权限
+                return true;
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("检查CommandSender权限时发生错误: " + e.getMessage());
+            return false;
+        }
+    }
 }

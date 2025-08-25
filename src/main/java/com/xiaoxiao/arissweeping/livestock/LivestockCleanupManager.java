@@ -1,7 +1,10 @@
 package com.xiaoxiao.arissweeping.livestock;
 
 import com.xiaoxiao.arissweeping.config.ModConfig;
-import com.xiaoxiao.arissweeping.util.EntityHotspotDetector.SparkEntityMetrics;
+import com.xiaoxiao.arissweeping.util.SparkEntityMetrics;
+import com.xiaoxiao.arissweeping.util.CleanupStateManager;
+import com.xiaoxiao.arissweeping.cleanup.CleanupServiceManager;
+import com.xiaoxiao.arissweeping.util.CleanupStateManager.CleanupType;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -13,7 +16,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -23,12 +25,15 @@ public class LivestockCleanupManager {
     private final Plugin plugin;
     private final ModConfig config;
     private final Map<String, LivestockViolationInfo> pendingCleanups = new HashMap<>();
-    private final AtomicBoolean isCleanupRunning = new AtomicBoolean(false);
+    private final CleanupStateManager stateManager;
+    private final CleanupServiceManager serviceManager;
     private BukkitTask warningTask;
     
     public LivestockCleanupManager(Plugin plugin, ModConfig config) {
         this.plugin = plugin;
         this.config = config;
+        this.stateManager = CleanupStateManager.getInstance();
+        this.serviceManager = new CleanupServiceManager((com.xiaoxiao.arissweeping.ArisSweeping) plugin);
     }
     
     /**
@@ -39,15 +44,10 @@ public class LivestockCleanupManager {
             return;
         }
         
-        try {
-            if (config.getBoolean("livestock.warning.region-based", false)) {
-                sendRegionBasedWarningMessage(violations);
-            } else {
-                sendStandardWarningMessage(violations);
-            }
-        } catch (Exception e) {
-            plugin.getLogger().severe("[LivestockCleanupManager] 发送警告消息时发生异常: " + e.getMessage());
-            e.printStackTrace();
+        if (config.getBoolean("livestock.warning.region-based", false)) {
+            sendRegionBasedWarningMessage(violations);
+        } else {
+            sendStandardWarningMessage(violations);
         }
     }
     
@@ -239,7 +239,17 @@ public class LivestockCleanupManager {
      * 解析区域信息
      */
     private String parseRegionInfo(String worldName, int chunkX, int chunkZ) {
-        // 简单的区域划分逻辑，可以根据需要扩展
+        // 将区块坐标转换为世界坐标
+        int worldX = chunkX * 16;
+        int worldZ = chunkZ * 16;
+        
+        // 首先尝试从配置的区域中查找
+        String configuredRegion = config.findRegionByCoordinates(worldName, worldX, worldZ);
+        if (configuredRegion != null) {
+            return configuredRegion;
+        }
+        
+        // 如果没有找到配置的区域，使用默认的方向划分逻辑
         int regionX = chunkX / 32; // 每32个区块为一个区域
         int regionZ = chunkZ / 32;
         
@@ -265,27 +275,21 @@ public class LivestockCleanupManager {
             return;
         }
         
-        try {
-            // 将违规信息添加到待清理列表
-            synchronized (pendingCleanups) {
-                pendingCleanups.putAll(violations);
-            }
-            
-            // 检查是否有紧急情况需要立即清理
-            boolean hasEmergency = violations.values().stream().anyMatch(LivestockViolationInfo::isEmergency);
-            
-            if (hasEmergency) {
-                plugin.getLogger().warning("[LivestockCleanupManager] 检测到紧急情况，立即执行清理");
-                performLivestockCleanup();
-            } else {
-                // 启动倒计时清理
-                int warningTimeMinutes = config.getWarningTimeMinutes();
-                startSmartLivestockCountdown(warningTimeMinutes, violations.size());
-            }
-            
-        } catch (Exception e) {
-            plugin.getLogger().severe("[LivestockCleanupManager] 调度清理任务时发生异常: " + e.getMessage());
-            e.printStackTrace();
+        // 将违规信息添加到待清理列表
+        synchronized (pendingCleanups) {
+            pendingCleanups.putAll(violations);
+        }
+        
+        // 检查是否有紧急情况需要立即清理
+        boolean hasEmergency = violations.values().stream().anyMatch(LivestockViolationInfo::isEmergency);
+        
+        if (hasEmergency) {
+            plugin.getLogger().warning("[LivestockCleanupManager] 检测到紧急情况，立即执行清理");
+            performLivestockCleanup();
+        } else {
+            // 启动倒计时清理
+            int warningTimeMinutes = config.getWarningTimeMinutes();
+            startSmartLivestockCountdown(warningTimeMinutes, violations.size());
         }
     }
     
@@ -362,7 +366,7 @@ public class LivestockCleanupManager {
      * 执行智能清理
      */
     public void performSmartCleanup(SparkEntityMetrics metrics) {
-        if (isCleanupRunning.get()) {
+        if (!stateManager.tryStartCleanup(CleanupStateManager.CleanupType.LIVESTOCK, "SMART_CLEANUP")) {
             return;
         }
         
@@ -371,7 +375,6 @@ public class LivestockCleanupManager {
             metrics.getTps(), metrics.getMspt(), metrics.getTotalEntities()
         ));
         
-        isCleanupRunning.set(true);
         performLivestockCleanup();
     }
     
@@ -384,66 +387,32 @@ public class LivestockCleanupManager {
             return;
         }
         
-        isCleanupRunning.set(true);
-        
-        try {
-            Map<String, LivestockViolationInfo> cleanupTargets;
-            synchronized (pendingCleanups) {
-                cleanupTargets = new HashMap<>(pendingCleanups);
-                pendingCleanups.clear();
-            }
-            
-            if (cleanupTargets.isEmpty()) {
-                plugin.getLogger().info("[LivestockCleanupManager] 没有待清理的违规位置");
-                return;
-            }
-            
-            // 按优先级排序清理目标
-            List<LivestockViolationInfo> sortedTargets = cleanupTargets.values().stream()
-                .sorted((a, b) -> Integer.compare(b.getCleanupPriority(), a.getCleanupPriority()))
-                .collect(Collectors.toList());
-            
-            int totalCleaned = 0;
-            int locationsProcessed = 0;
-            
-            for (LivestockViolationInfo violation : sortedTargets) {
-                try {
-                    int cleaned = cleanupLocation(violation);
-                    totalCleaned += cleaned;
-                    locationsProcessed++;
-                    
-                    if (config.isDebugMode()) {
+        // 使用新的服务架构执行清理
+        serviceManager.executeCleanup(CleanupType.LIVESTOCK, null, config.isAsyncCleanup())
+            .thenAccept(stats -> {
+                // 在主线程中处理通知
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        // 发送清理完成消息
+                        String completionMessage = String.format(
+                            "%s[畜牧业管理] 清理完成！移除了 %d 只动物",
+                            ChatColor.GREEN, stats.getMobsCleaned()
+                        );
+                        Bukkit.broadcastMessage(completionMessage);
+                        
                         plugin.getLogger().info(String.format(
-                            "[LivestockCleanupManager] 清理位置 %s: 移除 %d 只动物",
-                            violation.getLocationString(), cleaned
+                            "[LivestockCleanupManager] 畜牧业清理完成 - 移除动物: %d",
+                            stats.getMobsCleaned()
                         ));
                     }
-                } catch (Exception e) {
-                    plugin.getLogger().warning(String.format(
-                        "[LivestockCleanupManager] 清理位置 %s 时发生异常: %s",
-                        violation.getLocationString(), e.getMessage()
-                    ));
-                }
-            }
-            
-            // 发送清理完成消息
-            String completionMessage = String.format(
-                "%s[畜牧业管理] 清理完成！处理了 %d 个位置，移除了 %d 只动物",
-                ChatColor.GREEN, locationsProcessed, totalCleaned
-            );
-            Bukkit.broadcastMessage(completionMessage);
-            
-            plugin.getLogger().info(String.format(
-                "[LivestockCleanupManager] 畜牧业清理完成 - 处理位置: %d, 移除动物: %d",
-                locationsProcessed, totalCleaned
-            ));
-            
-        } catch (Exception e) {
-            plugin.getLogger().severe("[LivestockCleanupManager] 执行畜牧业清理时发生异常: " + e.getMessage());
-            e.printStackTrace();
-        } finally {
-            isCleanupRunning.set(false);
-        }
+                }.runTask(plugin);
+            })
+            .exceptionally(throwable -> {
+                plugin.getLogger().severe("[LivestockCleanupManager] 执行畜牧业清理时发生异常: " + throwable.getMessage());
+                throwable.printStackTrace();
+                return null;
+            });
     }
     
     /**
@@ -491,13 +460,9 @@ public class LivestockCleanupManager {
         // 执行移除
         int actuallyRemoved = 0;
         for (Animals animal : toRemoveList) {
-            try {
-                if (animal.isValid() && !animal.isDead()) {
-                    animal.remove();
-                    actuallyRemoved++;
-                }
-            } catch (Exception e) {
-                plugin.getLogger().warning("[LivestockCleanupManager] 移除动物时发生异常: " + e.getMessage());
+            if (animal.isValid() && !animal.isDead()) {
+                animal.remove();
+                actuallyRemoved++;
             }
         }
         
@@ -558,7 +523,7 @@ public class LivestockCleanupManager {
             status.append("待清理位置: ").append(pendingCleanups.size()).append("\n");
         }
         
-        status.append("清理任务: ").append(isCleanupRunning.get() ? "运行中" : "空闲").append("\n");
+        status.append("清理任务: ").append(serviceManager.isCleanupRunning(CleanupType.LIVESTOCK) ? "运行中" : "空闲").append("\n");
         status.append("倒计时任务: ").append(warningTask != null ? "运行中" : "无").append("\n");
         
         return status.toString();
@@ -566,7 +531,7 @@ public class LivestockCleanupManager {
     
     // Getter方法
     public boolean isCleanupRunning() {
-        return isCleanupRunning.get();
+        return serviceManager.isCleanupRunning(CleanupType.LIVESTOCK);
     }
     
     public int getPendingCleanupCount() {
