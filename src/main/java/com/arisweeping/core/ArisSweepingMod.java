@@ -20,6 +20,9 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 public class ArisSweepingMod {
     public static final String MODID = "arisweeping";
     
+    // 模组启用状态
+    private static volatile boolean enabled = true;
+    
     // 全局单例管理器 - 延迟初始化
     private static volatile com.arisweeping.async.AsyncTaskManager taskManager;
     private static volatile com.arisweeping.data.ConfigData configData;
@@ -49,6 +52,13 @@ public class ArisSweepingMod {
         event.enqueueWork(() -> {
             // 使用新的初始化管理器
             ArisLogger.info("正在初始化模组系统...");
+            
+            // 在客户端和服务端都初始化配置数据
+            if (configData == null) {
+                ArisLogger.info("正在初始化配置数据...");
+                configData = new com.arisweeping.data.ConfigData();
+            }
+            
             ModInitializer.initializeAll();
             
             long duration = System.currentTimeMillis() - startTime;
@@ -125,5 +135,20 @@ public class ArisSweepingMod {
     public static void updateConfigData(com.arisweeping.data.ConfigData newConfigData) {
         configData = newConfigData;
         ArisLogger.debug("配置数据已更新");
+    }
+    
+    /**
+     * 检查模组是否启用
+     */
+    public static boolean isEnabled() {
+        return enabled;
+    }
+    
+    /**
+     * 设置模组启用状态
+     */
+    public static void setEnabled(boolean newState) {
+        enabled = newState;
+        ArisLogger.info("ArisSweeping模组状态: " + (enabled ? "启用" : "禁用"));
     }
 }

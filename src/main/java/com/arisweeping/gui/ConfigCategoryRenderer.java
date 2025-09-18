@@ -1,8 +1,8 @@
 package com.arisweeping.gui;
 
 import com.arisweeping.data.ConfigData;
+
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
 /**
@@ -15,6 +15,11 @@ public abstract class ConfigCategoryRenderer {
     
     public ConfigCategoryRenderer(MiniHUDConfigScreen parentScreen, ConfigData configData) {
         this.parentScreen = parentScreen;
+        
+        // 确保configData不为null
+        if (configData == null) {
+            throw new IllegalArgumentException("ConfigData cannot be null");
+        }
         this.configData = configData;
     }
     
@@ -63,6 +68,17 @@ class ItemCleaningCategoryRenderer extends ConfigCategoryRenderer {
     @Override
     public void render(GuiGraphics guiGraphics, int x, int y, int width, 
                       int mouseX, int mouseY, float partialTick) {
+        // 双重null检查防护
+        if (configData == null) {
+            guiGraphics.drawString(getFont(), "§c配置数据未加载", x, y + 10, 0xFFFFFF, false);
+            return;
+        }
+        
+        if (configData.getItemCleaningConfig() == null) {
+            guiGraphics.drawString(getFont(), "§c物品清理配置未加载", x, y + 10, 0xFFFFFF, false);
+            return;
+        }
+        
         int currentY = y + 10;
         
         // 启用/禁用开关
@@ -215,6 +231,17 @@ class AnimalCleaningCategoryRenderer extends ConfigCategoryRenderer {
     @Override
     public void render(GuiGraphics guiGraphics, int x, int y, int width, 
                       int mouseX, int mouseY, float partialTick) {
+        // 双重null检查防护
+        if (configData == null) {
+            guiGraphics.drawString(getFont(), "§c配置数据未加载", x, y + 10, 0xFFFFFF, false);
+            return;
+        }
+        
+        if (configData.getAnimalCleaningConfig() == null) {
+            guiGraphics.drawString(getFont(), "§c动物清理配置未加载", x, y + 10, 0xFFFFFF, false);
+            return;
+        }
+        
         int currentY = y + 10;
         
         // 启用/禁用开关

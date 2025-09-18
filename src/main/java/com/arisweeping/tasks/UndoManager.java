@@ -1,14 +1,16 @@
 package com.arisweeping.tasks;
-import com.arisweeping.core.ArisLogger;
-
-import com.arisweeping.cleaning.EntityRemovalInfo;
-import com.arisweeping.tasks.models.TaskExecution;
-import com.arisweeping.tasks.models.TaskResult;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import com.arisweeping.cleaning.EntityRemovalInfo;
+import com.arisweeping.core.ArisLogger;
+import com.arisweeping.tasks.models.TaskExecution;
+import com.arisweeping.tasks.models.TaskResult;
 
 /**
  * 撤销管理器
@@ -204,6 +206,37 @@ public class UndoManager {
      */
     public int getUndoStackSize() {
         return undoStack.size();
+    }
+    
+    /**
+     * 撤销最后一次操作
+     * @return 是否成功撤销
+     */
+    public boolean undoLastOperation() {
+        List<UndoOperation> undoableOps = getUndoableOperations();
+        if (undoableOps.isEmpty()) {
+            ArisLogger.debug("没有可撤销的操作");
+            return false;
+        }
+        
+        // 获取最新的操作
+        UndoOperation lastOperation = undoableOps.get(undoableOps.size() - 1);
+        
+        try {
+            CompletableFuture<UndoResult> future = performUndo(lastOperation.getTaskId());
+            UndoResult result = future.get(30, java.util.concurrent.TimeUnit.SECONDS); // 30秒超时
+            
+            if (result.isSuccessful()) {
+                ArisLogger.info("成功撤销任务: {}, 恢复了{}个实体", lastOperation.getTaskId(), result.getRestoredCount());
+                return true;
+            } else {
+                ArisLogger.warn("撤销任务失败: {}, 错误: {}", lastOperation.getTaskId(), result.getErrorMessage());
+                return false;
+            }
+        } catch (Exception e) {
+            ArisLogger.error("执行撤销操作时发生异常", e);
+            return false;
+        }
     }
     
     /**

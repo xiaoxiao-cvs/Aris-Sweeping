@@ -1,0 +1,28 @@
+{
+  "key.categories.arisweeping": "ArisSweeping",
+  "key.arisweeping.config": "Open Configuration",
+  "key.arisweeping.toggle_hud": "Toggle HUD Display",
+  "key.arisweeping.toggle_mod": "Enable/Disable Mod",
+  "key.arisweeping.undo": "Undo Last Operation",
+  
+  "gui.arisweeping.config.title": "ArisSweeping Configuration",
+  "gui.arisweeping.hud.title": "ArisSweeping Status",
+  "gui.arisweeping.hud.status": "Status",
+  "gui.arisweeping.hud.enabled": "Enabled",
+  "gui.arisweeping.hud.disabled": "Disabled",
+  "gui.arisweeping.hud.entities_cleaned": "Entities Cleaned",
+  "gui.arisweeping.hud.tasks_completed": "Tasks Completed",
+  "gui.arisweeping.hud.memory_usage": "Memory Usage",
+  "gui.arisweeping.hud.cpu_load": "CPU Load",
+  "gui.arisweeping.hud.hotkeys": "Hotkeys",
+  "gui.arisweeping.hud.detailed_info": "Detailed Information",
+  
+  "message.arisweeping.config_opened": "Configuration opened",
+  "message.arisweeping.hud_shown": "HUD shown",
+  "message.arisweeping.hud_hidden": "HUD hidden",
+  "message.arisweeping.mod_enabled": "ArisSweeping enabled",
+  "message.arisweeping.mod_disabled": "ArisSweeping disabled",
+  "message.arisweeping.undo_success": "Last operation undone",
+  "message.arisweeping.undo_no_operations": "No operations to undo",
+  "message.arisweeping.undo_failed": "Undo operation failed"
+}

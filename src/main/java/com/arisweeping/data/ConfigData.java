@@ -1,8 +1,9 @@
 package com.arisweeping.data;
 
-import com.arisweeping.core.Constants;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+
+import com.arisweeping.core.Constants;
 
 /**
  * 配置数据管理类

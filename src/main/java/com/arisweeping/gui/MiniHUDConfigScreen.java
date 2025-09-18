@@ -67,7 +67,16 @@ public class MiniHUDConfigScreen extends Screen {
     public MiniHUDConfigScreen(Screen parentScreen) {
         super(Component.translatable("gui.arisweeping.config.title"));
         this.parentScreen = parentScreen;
-        this.configData = ArisSweepingMod.getConfigData();
+        
+        // 确保配置数据存在
+        ConfigData tempConfigData = ArisSweepingMod.getConfigData();
+        if (tempConfigData == null) {
+            // 如果配置数据为null，创建默认配置数据
+            tempConfigData = new ConfigData();
+            ArisSweepingMod.updateConfigData(tempConfigData);
+            com.arisweeping.core.ArisLogger.warn("配置数据为null，已创建默认配置数据");
+        }
+        this.configData = tempConfigData;
     }
     
     @Override

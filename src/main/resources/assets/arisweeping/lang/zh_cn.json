@@ -1,0 +1,28 @@
+{
+  "key.categories.arisweeping": "ArisSweeping",
+  "key.arisweeping.config": "打开配置界面",
+  "key.arisweeping.toggle_hud": "切换HUD显示",
+  "key.arisweeping.toggle_mod": "启用/禁用模组",
+  "key.arisweeping.undo": "撤销上次操作",
+  
+  "gui.arisweeping.config.title": "ArisSweeping 配置",
+  "gui.arisweeping.hud.title": "ArisSweeping 状态",
+  "gui.arisweeping.hud.status": "状态",
+  "gui.arisweeping.hud.enabled": "启用",
+  "gui.arisweeping.hud.disabled": "禁用",
+  "gui.arisweeping.hud.entities_cleaned": "已清理实体",
+  "gui.arisweeping.hud.tasks_completed": "完成任务",
+  "gui.arisweeping.hud.memory_usage": "内存使用",
+  "gui.arisweeping.hud.cpu_load": "CPU负载",
+  "gui.arisweeping.hud.hotkeys": "快捷键",
+  "gui.arisweeping.hud.detailed_info": "详细信息",
+  
+  "message.arisweeping.config_opened": "配置界面已打开",
+  "message.arisweeping.hud_shown": "HUD已显示",
+  "message.arisweeping.hud_hidden": "HUD已隐藏", 
+  "message.arisweeping.mod_enabled": "ArisSweeping已启用",
+  "message.arisweeping.mod_disabled": "ArisSweeping已禁用",
+  "message.arisweeping.undo_success": "已撤销上次操作",
+  "message.arisweeping.undo_no_operations": "没有可撤销的操作",
+  "message.arisweeping.undo_failed": "撤销操作失败"
+}

@@ -1,6 +1,4 @@
 package com.arisweeping.cleaning;
-import com.arisweeping.core.ArisLogger;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +8,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-
 import com.arisweeping.async.AsyncTaskManager;
 import com.arisweeping.cleaning.filters.AnimalDensityFilter;
 import com.arisweeping.cleaning.filters.ItemEntityFilter;
@@ -18,6 +15,7 @@ import com.arisweeping.cleaning.strategies.CleaningStrategy;
 import com.arisweeping.cleaning.strategies.DensityBasedStrategy;
 import com.arisweeping.cleaning.strategies.DistanceBasedStrategy;
 import com.arisweeping.cleaning.strategies.TimeBasedStrategy;
+import com.arisweeping.core.ArisLogger;
 import com.arisweeping.data.ConfigData;
 
 import net.minecraft.server.level.ServerLevel;
@@ -237,8 +235,8 @@ public class EntityCleaner {
         } else {
             // 全世界范围
             level.getAllEntities().forEach(entity -> {
-                if (entity instanceof ItemEntity) {
-                    items.add((ItemEntity) entity);
+                if (entity instanceof ItemEntity itemEntity) {
+                    items.add(itemEntity);
                 }
             });
         }
@@ -279,8 +277,8 @@ public class EntityCleaner {
         } else {
             // 全世界范围
             level.getAllEntities().forEach(entity -> {
-                if (entity instanceof Animal) {
-                    animals.add((Animal) entity);
+                if (entity instanceof Animal animal) {
+                    animals.add(animal);
                 }
             });
         }
@@ -298,15 +296,20 @@ public class EntityCleaner {
                 return false;
             }
             
-            // 在主线程中安全移除
-            entity.level().getServer().executeIfPossible(() -> {
+            // 在主线程中安全移除，检查level是否为null
+            if (entity.level() != null && entity.level().getServer() != null) {
+                entity.level().getServer().executeIfPossible(() -> {
+                    entity.discard();
+                });
+            } else {
+                // 如果无法获取服务器引用，直接移除实体
                 entity.discard();
-            });
+            }
             
             return true;
             
         } catch (Exception e) {
-            ArisLogger.error("Failed to remove entity: {}", entity, e);
+            ArisLogger.error("Failed to remove entity: %s", entity.toString());
             return false;
         }
     }

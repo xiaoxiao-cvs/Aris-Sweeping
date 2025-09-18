@@ -1,17 +1,23 @@
 package com.arisweeping.monitoring;
-import com.arisweeping.core.ArisLogger;
-
-import com.arisweeping.async.AsyncTaskManager;
-import com.arisweeping.async.ThreadSafeCounter;
-
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
 import java.lang.management.ThreadMXBean;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
+import com.arisweeping.async.AsyncTaskManager;
+import com.arisweeping.async.ThreadSafeCounter;
+import com.arisweeping.core.ArisLogger;
 
 /**
  * 性能监控器
@@ -114,7 +120,6 @@ public class PerformanceMonitor {
     // 系统监控组件
     private final MemoryMXBean memoryBean;
     private final ThreadMXBean threadBean;
-    private final Runtime runtime;
     
     // 监控数据
     private final AsyncTaskManager asyncManager;
@@ -136,7 +141,6 @@ public class PerformanceMonitor {
         this.asyncManager = asyncManager;
         this.memoryBean = ManagementFactory.getMemoryMXBean();
         this.threadBean = ManagementFactory.getThreadMXBean();
-        this.runtime = Runtime.getRuntime();
         
         this.currentMetrics = new AtomicReference<>();
         this.metricsHistory = new ConcurrentLinkedQueue<>();

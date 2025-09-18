@@ -1,23 +1,29 @@
 package com.arisweeping.async;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 import com.arisweeping.core.ArisLogger;
 import com.arisweeping.core.Constants;
+
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
-
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * 区块处理器
@@ -166,7 +172,6 @@ public class ChunkProcessor {
     }
     
     private final AsyncTaskManager asyncManager;
-    private final ReentrantReadWriteLock progressLock = new ReentrantReadWriteLock();
     private final Map<UUID, ProcessingProgress> activeOperations = new ConcurrentHashMap<>();
     
     public ChunkProcessor(AsyncTaskManager asyncManager) {
@@ -256,11 +261,10 @@ public class ChunkProcessor {
         return chunks.parallelStream()
                 .map(pos -> {
                     try {
-                        LevelChunk chunk = level.getChunk(pos.x, pos.z);
                         // 在Minecraft 1.20.1中，我们使用level来获取区块内的实体
-                        List<net.minecraft.world.entity.Entity> entities = level.getEntities(null, 
-                            new net.minecraft.world.phys.AABB(pos.getMinBlockX(), level.getMinBuildHeight(), pos.getMinBlockZ(),
-                                                             pos.getMaxBlockX() + 1, level.getMaxBuildHeight(), pos.getMaxBlockZ() + 1));
+                        List<Entity> entities = level.getEntities(null, 
+                            new AABB(pos.getMinBlockX(), level.getMinBuildHeight(), pos.getMinBlockZ(),
+                                    pos.getMaxBlockX() + 1, level.getMaxBuildHeight(), pos.getMaxBlockZ() + 1));
                         int entityCount = entities.size();
                         
                         // 计算优先级：实体数量越多，优先级越高
@@ -293,7 +297,7 @@ public class ChunkProcessor {
                                                   progress, concurrencyLimit))
                 .collect(Collectors.toList());
         
-        return CompletableFuture.allOf(chunkFutures.toArray(new CompletableFuture[0]))
+        return CompletableFuture.allOf(chunkFutures.toArray(CompletableFuture[]::new))
                 .thenApply(v -> chunkFutures.stream()
                         .map(CompletableFuture::join)
                         .collect(Collectors.toList()));

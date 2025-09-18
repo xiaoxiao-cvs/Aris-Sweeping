@@ -20,6 +20,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class SmartTaskManager {
     
+    // 单例实例
+    private static volatile SmartTaskManager instance;
+    
     // 核心组件
     private final AsyncTaskManager asyncManager;
     private final TaskQueue taskQueue;
@@ -42,6 +45,20 @@ public class SmartTaskManager {
             Constants.TaskManagement.UNDO_TIMEOUT_MINUTES
         );
         this.historyManager = new TaskHistoryManager();
+    }
+    
+    /**
+     * 获取单例实例
+     */
+    public static SmartTaskManager getInstance() {
+        if (instance == null) {
+            synchronized (SmartTaskManager.class) {
+                if (instance == null) {
+                    instance = new SmartTaskManager();
+                }
+            }
+        }
+        return instance;
     }
     
     /**
@@ -330,5 +347,18 @@ public class SmartTaskManager {
      */
     public String getAsyncManagerStatus() {
         return asyncManager.getPoolStatus();
+    }
+    
+    /**
+     * 撤销上次操作
+     * @return 是否成功撤销
+     */
+    public boolean undoLastOperation() {
+        try {
+            return undoManager.undoLastOperation();
+        } catch (Exception e) {
+            com.arisweeping.core.ArisLogger.error("撤销操作失败", e);
+            return false;
+        }
     }
 }
