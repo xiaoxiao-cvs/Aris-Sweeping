@@ -1,10 +1,9 @@
 package com.arisweeping.tasks;
+import com.arisweeping.core.ArisLogger;
 
 import com.arisweeping.cleaning.EntityRemovalInfo;
 import com.arisweeping.tasks.models.TaskExecution;
 import com.arisweeping.tasks.models.TaskResult;
-import com.mojang.logging.LogUtils;
-import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -18,7 +17,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * 支持实体NBT数据保存和安全的实体恢复机制
  */
 public class UndoManager {
-    private static final Logger LOGGER = LogUtils.getLogger();
     
     private final int maxUndoOperations;
     private final long undoTimeoutMinutes;
@@ -30,7 +28,7 @@ public class UndoManager {
     public UndoManager(int maxUndoOperations, long undoTimeoutMinutes) {
         this.maxUndoOperations = maxUndoOperations;
         this.undoTimeoutMinutes = undoTimeoutMinutes;
-        LOGGER.info("UndoManager initialized with max operations: {}, timeout: {} minutes", 
+        ArisLogger.info("UndoManager initialized with max operations: {}, timeout: {} minutes", 
                    maxUndoOperations, undoTimeoutMinutes);
         
         // 启动清理过期数据的定时任务
@@ -46,7 +44,7 @@ public class UndoManager {
         }
         
         UUID taskId = execution.getTaskId();
-        LOGGER.debug("Recording task for undo: {}", taskId);
+        ArisLogger.debug("Recording task for undo: {}", taskId);
         
         try {
             // 创建撤销数据
@@ -66,11 +64,11 @@ public class UndoManager {
             undoStack.offer(operation);
             undoDataMap.put(taskId, undoData);
             
-            LOGGER.info("Recorded undo operation for task: {} with {} entities", 
+            ArisLogger.info("Recorded undo operation for task: {} with {} entities", 
                        taskId, undoData.getEntityCount());
             
         } catch (Exception e) {
-            LOGGER.error("Failed to record undo data for task: {}", taskId, e);
+            ArisLogger.error("Failed to record undo data for task: {}", taskId, e);
         }
     }
     
@@ -104,17 +102,17 @@ public class UndoManager {
      */
     public CompletableFuture<UndoResult> performUndo(UUID originalTaskId) {
         return CompletableFuture.supplyAsync(() -> {
-            LOGGER.info("Performing undo for task: {}", originalTaskId);
+            ArisLogger.info("Performing undo for task: {}", originalTaskId);
             
             UndoData undoData = undoDataMap.get(originalTaskId);
             if (undoData == null) {
-                LOGGER.warn("No undo data found for task: {}", originalTaskId);
+                ArisLogger.warn("No undo data found for task: {}", originalTaskId);
                 return UndoResult.failure(originalTaskId, "No undo data available");
             }
             
             // 检查撤销是否已超时
             if (isUndoExpired(undoData)) {
-                LOGGER.warn("Undo operation expired for task: {}", originalTaskId);
+                ArisLogger.warn("Undo operation expired for task: {}", originalTaskId);
                 removeUndoData(originalTaskId);
                 return UndoResult.failure(originalTaskId, "Undo operation expired");
             }
@@ -126,11 +124,11 @@ public class UndoManager {
                 // 移除撤销数据
                 removeUndoData(originalTaskId);
                 
-                LOGGER.info("Successfully restored {} entities for task: {}", restoredCount, originalTaskId);
+                ArisLogger.info("Successfully restored {} entities for task: {}", restoredCount, originalTaskId);
                 return UndoResult.success(originalTaskId, restoredCount);
                 
             } catch (Exception e) {
-                LOGGER.error("Failed to perform undo for task: {}", originalTaskId, e);
+                ArisLogger.error("Failed to perform undo for task: {}", originalTaskId, e);
                 return UndoResult.failure(originalTaskId, "Undo operation failed: " + e.getMessage());
             }
         });
@@ -162,7 +160,7 @@ public class UndoManager {
             // 2. 在指定位置生成实体
             // 3. 恢复实体的所有属性
             
-            LOGGER.debug("Restoring entity: {} at ({}, {}, {})", 
+            ArisLogger.debug("Restoring entity: {} at ({}, {}, {})", 
                         entityInfo.getEntityType(),
                         entityInfo.getX(), 
                         entityInfo.getY(), 
@@ -172,7 +170,7 @@ public class UndoManager {
             return true;
             
         } catch (Exception e) {
-            LOGGER.error("Failed to restore entity: {}", entityInfo.getEntityId(), e);
+            ArisLogger.error("Failed to restore entity: {}", entityInfo.getEntityId(), e);
             return false;
         }
     }
@@ -214,7 +212,7 @@ public class UndoManager {
     public void clearAllUndoData() {
         undoStack.clear();
         undoDataMap.clear();
-        LOGGER.info("Cleared all undo data");
+        ArisLogger.info("Cleared all undo data");
     }
     
     /**
@@ -242,7 +240,7 @@ public class UndoManager {
             UndoOperation oldest = undoStack.poll();
             if (oldest != null) {
                 undoDataMap.remove(oldest.getTaskId());
-                LOGGER.debug("Removed oldest undo operation: {}", oldest.getTaskId());
+                ArisLogger.debug("Removed oldest undo operation: {}", oldest.getTaskId());
             }
         }
     }
@@ -261,7 +259,7 @@ public class UndoManager {
     private void startCleanupTask() {
         // TODO: 实现定时清理过期撤销数据的逻辑
         // 可以使用ScheduledExecutorService定期清理
-        LOGGER.debug("Undo data cleanup task started");
+        ArisLogger.debug("Undo data cleanup task started");
     }
     
     /**

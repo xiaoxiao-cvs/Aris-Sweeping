@@ -1,6 +1,8 @@
 package com.arisweeping.gui;
 
 import com.arisweeping.data.ConfigData;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
 /**
@@ -14,6 +16,13 @@ public abstract class ConfigCategoryRenderer {
     public ConfigCategoryRenderer(MiniHUDConfigScreen parentScreen, ConfigData configData) {
         this.parentScreen = parentScreen;
         this.configData = configData;
+    }
+    
+    /**
+     * 获取字体实例
+     */
+    protected net.minecraft.client.gui.Font getFont() {
+        return Minecraft.getInstance().font;
     }
     
     /**
@@ -103,7 +112,7 @@ class ItemCleaningCategoryRenderer extends ConfigCategoryRenderer {
     private void renderToggleOption(GuiGraphics guiGraphics, int x, int y, int width,
                                    String label, boolean value) {
         // 渲染标签
-        guiGraphics.drawString(parentScreen.font, label, x, y + 5, 0xFFFFFFFF, false);
+        guiGraphics.drawString(Minecraft.getInstance().font, label, x, y + 5, 0xFFFFFFFF, false);
         
         // 渲染开关按钮
         int toggleX = x + width - 50;
@@ -117,17 +126,17 @@ class ItemCleaningCategoryRenderer extends ConfigCategoryRenderer {
         guiGraphics.fill(toggleX, toggleY, toggleX + toggleWidth, toggleY + toggleHeight, bgColor);
         
         String text = value ? "开" : "关";
-        int textX = toggleX + (toggleWidth - parentScreen.font.width(text)) / 2;
+        int textX = toggleX + (toggleWidth - getFont().width(text)) / 2;
         int textY = toggleY + (toggleHeight - 8) / 2;
         
-        guiGraphics.drawString(parentScreen.font, text, textX, textY, fgColor, false);
+        guiGraphics.drawString(getFont(), text, textX, textY, fgColor, false);
     }
     
     private void renderSliderOption(GuiGraphics guiGraphics, int x, int y, int width,
                                    String label, int value, int min, int max, int step) {
         // 渲染标签和当前值
         String labelWithValue = label + ": " + value;
-        guiGraphics.drawString(parentScreen.font, labelWithValue, x, y, 0xFFFFFFFF, false);
+        guiGraphics.drawString(getFont(), labelWithValue, x, y, 0xFFFFFFFF, false);
         
         // 渲染滑块
         int sliderX = x;
@@ -154,7 +163,7 @@ class ItemCleaningCategoryRenderer extends ConfigCategoryRenderer {
     private void renderListOption(GuiGraphics guiGraphics, int x, int y, int width,
                                  String label, java.util.List<String> items) {
         // 渲染标签
-        guiGraphics.drawString(parentScreen.font, label, x, y, 0xFFFFFFFF, false);
+        guiGraphics.drawString(getFont(), label, x, y, 0xFFFFFFFF, false);
         
         // 渲染列表框
         int listX = x;
@@ -174,7 +183,7 @@ class ItemCleaningCategoryRenderer extends ConfigCategoryRenderer {
         for (String item : items) {
             if (itemY + 10 > listY + listHeight - 2) break;
             
-            guiGraphics.drawString(parentScreen.font, item, listX + 5, itemY, 0xFFCCCCCC, false);
+            guiGraphics.drawString(getFont(), item, listX + 5, itemY, 0xFFCCCCCC, false);
             itemY += 10;
         }
         
@@ -187,10 +196,10 @@ class ItemCleaningCategoryRenderer extends ConfigCategoryRenderer {
         guiGraphics.fill(addButtonX, addButtonY, addButtonX + addButtonWidth, addButtonY + addButtonHeight, 0xFF007ACC);
         
         String addText = "添加";
-        int addTextX = addButtonX + (addButtonWidth - parentScreen.font.width(addText)) / 2;
+        int addTextX = addButtonX + (addButtonWidth - getFont().width(addText)) / 2;
         int addTextY = addButtonY + (addButtonHeight - 8) / 2;
         
-        guiGraphics.drawString(parentScreen.font, addText, addTextX, addTextY, 0xFFFFFFFF, false);
+        guiGraphics.drawString(getFont(), addText, addTextX, addTextY, 0xFFFFFFFF, false);
     }
 }
 
@@ -248,7 +257,7 @@ class AnimalCleaningCategoryRenderer extends ConfigCategoryRenderer {
     private void renderToggleOption(GuiGraphics guiGraphics, int x, int y, int width,
                                    String label, boolean value) {
         // 复用ItemCleaningCategoryRenderer的实现
-        guiGraphics.drawString(parentScreen.font, label, x, y + 5, 0xFFFFFFFF, false);
+        guiGraphics.drawString(getFont(), label, x, y + 5, 0xFFFFFFFF, false);
         
         int toggleX = x + width - 50;
         int toggleY = y;
@@ -261,16 +270,16 @@ class AnimalCleaningCategoryRenderer extends ConfigCategoryRenderer {
         guiGraphics.fill(toggleX, toggleY, toggleX + toggleWidth, toggleY + toggleHeight, bgColor);
         
         String text = value ? "开" : "关";
-        int textX = toggleX + (toggleWidth - parentScreen.font.width(text)) / 2;
+        int textX = toggleX + (toggleWidth - getFont().width(text)) / 2;
         int textY = toggleY + (toggleHeight - 8) / 2;
         
-        guiGraphics.drawString(parentScreen.font, text, textX, textY, fgColor, false);
+        guiGraphics.drawString(getFont(), text, textX, textY, fgColor, false);
     }
     
     private void renderSliderOption(GuiGraphics guiGraphics, int x, int y, int width,
                                    String label, int value, int min, int max, int step) {
         String labelWithValue = label + ": " + value;
-        guiGraphics.drawString(parentScreen.font, labelWithValue, x, y, 0xFFFFFFFF, false);
+        guiGraphics.drawString(getFont(), labelWithValue, x, y, 0xFFFFFFFF, false);
         
         int sliderX = x;
         int sliderY = y + 12;
@@ -306,20 +315,20 @@ class TaskManagementCategoryRenderer extends ConfigCategoryRenderer {
         int currentY = y + 10;
         
         // 任务状态显示
-        guiGraphics.drawString(parentScreen.font, "当前任务状态:", x, currentY, 0xFFFFFFFF, false);
+        guiGraphics.drawString(getFont(), "当前任务状态:", x, currentY, 0xFFFFFFFF, false);
         currentY += 15;
         
-        guiGraphics.drawString(parentScreen.font, "• 活动任务: 0", x + 10, currentY, 0xFFCCCCCC, false);
+        guiGraphics.drawString(getFont(), "• 活动任务: 0", x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 12;
         
-        guiGraphics.drawString(parentScreen.font, "• 队列任务: 0", x + 10, currentY, 0xFFCCCCCC, false);
+        guiGraphics.drawString(getFont(), "• 队列任务: 0", x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 12;
         
-        guiGraphics.drawString(parentScreen.font, "• 可撤销操作: 0", x + 10, currentY, 0xFFCCCCCC, false);
+        guiGraphics.drawString(getFont(), "• 可撤销操作: 0", x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 30;
         
         // 撤销操作区域
-        guiGraphics.drawString(parentScreen.font, "撤销操作:", x, currentY, 0xFFFFFFFF, false);
+        guiGraphics.drawString(getFont(), "撤销操作:", x, currentY, 0xFFFFFFFF, false);
         currentY += 15;
         
         // 撤销按钮
@@ -328,7 +337,7 @@ class TaskManagementCategoryRenderer extends ConfigCategoryRenderer {
         currentY += 35;
         
         // 任务控制区域
-        guiGraphics.drawString(parentScreen.font, "任务控制:", x, currentY, 0xFFFFFFFF, false);
+        guiGraphics.drawString(getFont(), "任务控制:", x, currentY, 0xFFFFFFFF, false);
         currentY += 15;
         
         renderButton(guiGraphics, x, currentY, 80, 20, "暂停任务");
@@ -352,10 +361,10 @@ class TaskManagementCategoryRenderer extends ConfigCategoryRenderer {
         guiGraphics.fill(x, y + height - 1, x + width, y + height, 0xFF333333);
         
         // 按钮文本
-        int textX = x + (width - parentScreen.font.width(text)) / 2;
+        int textX = x + (width - getFont().width(text)) / 2;
         int textY = y + (height - 8) / 2;
         
-        guiGraphics.drawString(parentScreen.font, text, textX, textY, 0xFFFFFFFF, false);
+        guiGraphics.drawString(getFont(), text, textX, textY, 0xFFFFFFFF, false);
     }
 }
 
@@ -373,30 +382,30 @@ class PerformanceCategoryRenderer extends ConfigCategoryRenderer {
                       int mouseX, int mouseY, float partialTick) {
         int currentY = y + 10;
         
-        guiGraphics.drawString(parentScreen.font, "线程池配置:", x, currentY, 0xFFFFFFFF, false);
+        guiGraphics.drawString(getFont(), "线程池配置:", x, currentY, 0xFFFFFFFF, false);
         currentY += 20;
         
-        guiGraphics.drawString(parentScreen.font, "• 核心线程数: 4", x + 10, currentY, 0xFFCCCCCC, false);
+        guiGraphics.drawString(getFont(), "• 核心线程数: 4", x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 12;
         
-        guiGraphics.drawString(parentScreen.font, "• IO线程数: 2", x + 10, currentY, 0xFFCCCCCC, false);
+        guiGraphics.drawString(getFont(), "• IO线程数: 2", x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 12;
         
-        guiGraphics.drawString(parentScreen.font, "• 调度线程数: 1", x + 10, currentY, 0xFFCCCCCC, false);
+        guiGraphics.drawString(getFont(), "• 调度线程数: 1", x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 30;
         
-        guiGraphics.drawString(parentScreen.font, "内存使用:", x, currentY, 0xFFFFFFFF, false);
+        guiGraphics.drawString(getFont(), "内存使用:", x, currentY, 0xFFFFFFFF, false);
         currentY += 20;
         
         Runtime runtime = Runtime.getRuntime();
         long used = runtime.totalMemory() - runtime.freeMemory();
         long max = runtime.maxMemory();
         
-        guiGraphics.drawString(parentScreen.font, String.format("• 已用内存: %d MB", used / 1024 / 1024), 
+        guiGraphics.drawString(getFont(), String.format("• 已用内存: %d MB", used / 1024 / 1024), 
                               x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 12;
         
-        guiGraphics.drawString(parentScreen.font, String.format("• 最大内存: %d MB", max / 1024 / 1024), 
+        guiGraphics.drawString(getFont(), String.format("• 最大内存: %d MB", max / 1024 / 1024), 
                               x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 30;
         
@@ -423,31 +432,31 @@ class StatisticsCategoryRenderer extends ConfigCategoryRenderer {
                       int mouseX, int mouseY, float partialTick) {
         int currentY = y + 10;
         
-        guiGraphics.drawString(parentScreen.font, "清理统计:", x, currentY, 0xFFFFFFFF, false);
+        guiGraphics.drawString(getFont(), "清理统计:", x, currentY, 0xFFFFFFFF, false);
         currentY += 20;
         
-        guiGraphics.drawString(parentScreen.font, "• 总清理实体数: 0", x + 10, currentY, 0xFFCCCCCC, false);
+        guiGraphics.drawString(getFont(), "• 总清理实体数: 0", x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 12;
         
-        guiGraphics.drawString(parentScreen.font, "• 清理物品数: 0", x + 10, currentY, 0xFFCCCCCC, false);
+        guiGraphics.drawString(getFont(), "• 清理物品数: 0", x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 12;
         
-        guiGraphics.drawString(parentScreen.font, "• 清理动物数: 0", x + 10, currentY, 0xFFCCCCCC, false);
+        guiGraphics.drawString(getFont(), "• 清理动物数: 0", x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 12;
         
-        guiGraphics.drawString(parentScreen.font, "• 撤销操作数: 0", x + 10, currentY, 0xFFCCCCCC, false);
+        guiGraphics.drawString(getFont(), "• 撤销操作数: 0", x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 30;
         
-        guiGraphics.drawString(parentScreen.font, "任务统计:", x, currentY, 0xFFFFFFFF, false);
+        guiGraphics.drawString(getFont(), "任务统计:", x, currentY, 0xFFFFFFFF, false);
         currentY += 20;
         
-        guiGraphics.drawString(parentScreen.font, "• 总执行任务数: 0", x + 10, currentY, 0xFFCCCCCC, false);
+        guiGraphics.drawString(getFont(), "• 总执行任务数: 0", x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 12;
         
-        guiGraphics.drawString(parentScreen.font, "• 成功任务数: 0", x + 10, currentY, 0xFFCCCCCC, false);
+        guiGraphics.drawString(getFont(), "• 成功任务数: 0", x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 12;
         
-        guiGraphics.drawString(parentScreen.font, "• 失败任务数: 0", x + 10, currentY, 0xFFCCCCCC, false);
+        guiGraphics.drawString(getFont(), "• 失败任务数: 0", x + 10, currentY, 0xFFCCCCCC, false);
         currentY += 30;
         
         parentScreen.setMaxScroll(Math.max(0, currentY - y - parentScreen.height + 150));

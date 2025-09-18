@@ -1,8 +1,7 @@
 package com.arisweeping.cleaning.strategies;
+import com.arisweeping.core.ArisLogger;
 
 import com.arisweeping.data.ConfigData;
-import com.mojang.logging.LogUtils;
-import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,7 +12,6 @@ import java.util.stream.Collectors;
  * 根据实体存在的时间来决定是否清理
  */
 public class TimeBasedStrategy implements CleaningStrategy {
-    private static final Logger LOGGER = LogUtils.getLogger();
     
     private final ConfigData configData;
     private boolean enabled = true;
@@ -29,7 +27,7 @@ public class TimeBasedStrategy implements CleaningStrategy {
             return candidates;
         }
         
-        LOGGER.debug("Applying time-based strategy to {} candidates", candidates.size());
+        ArisLogger.debug("Applying time-based strategy to {} candidates", candidates.size());
         
         // 这里需要实际的实体时间检查逻辑
         // 为了编译通过，暂时返回所有候选者
@@ -58,6 +56,6 @@ public class TimeBasedStrategy implements CleaningStrategy {
     @Override
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-        LOGGER.info("TimeBasedStrategy enabled: {}", enabled);
+        ArisLogger.info("TimeBasedStrategy enabled: {}", enabled);
     }
 }

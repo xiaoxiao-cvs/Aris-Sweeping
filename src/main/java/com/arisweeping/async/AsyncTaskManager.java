@@ -1,8 +1,7 @@
 package com.arisweeping.async;
+import com.arisweeping.core.ArisLogger;
 
 import com.arisweeping.core.Constants;
-import com.mojang.logging.LogUtils;
-import org.slf4j.Logger;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -14,7 +13,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * 负责管理多个线程池，提供不同类型的异步任务执行能力
  */
 public class AsyncTaskManager {
-    private static final Logger LOGGER = LogUtils.getLogger();
     
     // 线程池
     private final ThreadPoolExecutor coreThreadPool;
@@ -26,7 +24,7 @@ public class AsyncTaskManager {
     private final AtomicLong taskCounter = new AtomicLong(0);
     
     public AsyncTaskManager() {
-        LOGGER.info("Initializing AsyncTaskManager...");
+        ArisLogger.info("Initializing AsyncTaskManager...");
         
         // 创建核心线程池 - 用于CPU密集型任务
         this.coreThreadPool = new ThreadPoolExecutor(
@@ -60,7 +58,7 @@ public class AsyncTaskManager {
         this.coreThreadPool.allowCoreThreadTimeOut(true);
         this.ioThreadPool.allowCoreThreadTimeOut(true);
         
-        LOGGER.info("AsyncTaskManager initialized with core pool size: {}, io pool size: {}, scheduler pool size: {}",
+        ArisLogger.info("AsyncTaskManager initialized with core pool size: {}, io pool size: {}, scheduler pool size: {}",
                    coreThreadPool.getCorePoolSize(), ioThreadPool.getCorePoolSize(), 
                    Constants.AsyncProcessing.SCHEDULER_THREAD_POOL_SIZE);
     }
@@ -202,7 +200,7 @@ public class AsyncTaskManager {
      */
     public void shutdown() {
         if (isShutdown.compareAndSet(false, true)) {
-            LOGGER.info("Shutting down AsyncTaskManager...");
+            ArisLogger.info("Shutting down AsyncTaskManager...");
             
             // 关闭线程池
             coreThreadPool.shutdown();
@@ -212,23 +210,23 @@ public class AsyncTaskManager {
             try {
                 // 等待任务完成
                 if (!coreThreadPool.awaitTermination(30, TimeUnit.SECONDS)) {
-                    LOGGER.warn("Core thread pool did not terminate gracefully, forcing shutdown");
+                    ArisLogger.warn("Core thread pool did not terminate gracefully, forcing shutdown");
                     coreThreadPool.shutdownNow();
                 }
                 
                 if (!ioThreadPool.awaitTermination(30, TimeUnit.SECONDS)) {
-                    LOGGER.warn("IO thread pool did not terminate gracefully, forcing shutdown");
+                    ArisLogger.warn("IO thread pool did not terminate gracefully, forcing shutdown");
                     ioThreadPool.shutdownNow();
                 }
                 
                 if (!schedulerThreadPool.awaitTermination(10, TimeUnit.SECONDS)) {
-                    LOGGER.warn("Scheduler thread pool did not terminate gracefully, forcing shutdown");
+                    ArisLogger.warn("Scheduler thread pool did not terminate gracefully, forcing shutdown");
                     schedulerThreadPool.shutdownNow();
                 }
                 
-                LOGGER.info("AsyncTaskManager shutdown completed. Total tasks processed: {}", taskCounter.get());
+                ArisLogger.info("AsyncTaskManager shutdown completed. Total tasks processed: {}", taskCounter.get());
             } catch (InterruptedException e) {
-                LOGGER.error("Interrupted during shutdown", e);
+                ArisLogger.error("Interrupted during shutdown", e);
                 Thread.currentThread().interrupt();
             }
         }
@@ -239,13 +237,13 @@ public class AsyncTaskManager {
      */
     public void shutdownNow() {
         if (isShutdown.compareAndSet(false, true)) {
-            LOGGER.warn("Force shutting down AsyncTaskManager...");
+            ArisLogger.warn("Force shutting down AsyncTaskManager...");
             
             coreThreadPool.shutdownNow();
             ioThreadPool.shutdownNow();
             schedulerThreadPool.shutdownNow();
             
-            LOGGER.warn("AsyncTaskManager force shutdown completed. Total tasks processed: {}", taskCounter.get());
+            ArisLogger.warn("AsyncTaskManager force shutdown completed. Total tasks processed: {}", taskCounter.get());
         }
     }
     
@@ -270,5 +268,42 @@ public class AsyncTaskManager {
         thread.setDaemon(true);
         thread.setPriority(Thread.NORM_PRIORITY);
         return thread;
+    }
+    
+    // Getter methods for monitoring
+    
+    /**
+     * 获取核心线程池
+     */
+    public ThreadPoolExecutor getCoreThreadPool() {
+        return coreThreadPool;
+    }
+    
+    /**
+     * 获取IO线程池
+     */
+    public ThreadPoolExecutor getIOThreadPool() {
+        return ioThreadPool;
+    }
+    
+    /**
+     * 获取调度线程池
+     */
+    public ScheduledExecutorService getSchedulerThreadPool() {
+        return schedulerThreadPool;
+    }
+    
+    /**
+     * 获取总活动任务数
+     */
+    public int getTotalActiveCount() {
+        return coreThreadPool.getActiveCount() + ioThreadPool.getActiveCount();
+    }
+    
+    /**
+     * 获取总任务计数
+     */
+    public long getTotalTaskCount() {
+        return taskCounter.get();
     }
 }

@@ -1,8 +1,7 @@
 package com.arisweeping.cleaning.strategies;
+import com.arisweeping.core.ArisLogger;
 
 import com.arisweeping.data.ConfigData;
-import com.mojang.logging.LogUtils;
-import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,7 +12,6 @@ import java.util.stream.Collectors;
  * 根据实体与玩家或指定点的距离来决定是否清理
  */
 public class DistanceBasedStrategy implements CleaningStrategy {
-    private static final Logger LOGGER = LogUtils.getLogger();
     
     private final ConfigData configData;
     private boolean enabled = true;
@@ -32,7 +30,7 @@ public class DistanceBasedStrategy implements CleaningStrategy {
             return candidates;
         }
         
-        LOGGER.debug("Applying distance-based strategy to {} candidates", candidates.size());
+        ArisLogger.debug("Applying distance-based strategy to {} candidates", candidates.size());
         
         // TODO: 实现基于距离的过滤逻辑
         // 需要：
@@ -63,7 +61,7 @@ public class DistanceBasedStrategy implements CleaningStrategy {
     public void setMaxDistance(double maxDistance) {
         if (maxDistance > 0) {
             this.maxDistance = maxDistance;
-            LOGGER.info("Distance-based strategy max distance set to: {}", maxDistance);
+            ArisLogger.info("Distance-based strategy max distance set to: {}", maxDistance);
         }
     }
     
@@ -92,6 +90,6 @@ public class DistanceBasedStrategy implements CleaningStrategy {
     @Override
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-        LOGGER.info("DistanceBasedStrategy enabled: {}", enabled);
+        ArisLogger.info("DistanceBasedStrategy enabled: {}", enabled);
     }
 }

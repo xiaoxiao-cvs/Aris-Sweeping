@@ -70,3 +70,5 @@ node_modules/
 # 打包文件
 *.tgz
 *.tar.gz
+
+.github

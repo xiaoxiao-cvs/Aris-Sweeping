@@ -1,8 +1,7 @@
 package com.arisweeping.cleaning.strategies;
+import com.arisweeping.core.ArisLogger;
 
 import com.arisweeping.data.ConfigData;
-import com.mojang.logging.LogUtils;
-import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -13,7 +12,6 @@ import java.util.stream.Collectors;
  * 根据实体在特定区域内的密度来决定是否清理
  */
 public class DensityBasedStrategy implements CleaningStrategy {
-    private static final Logger LOGGER = LogUtils.getLogger();
     
     private final ConfigData configData;
     private boolean enabled = true;
@@ -34,7 +32,7 @@ public class DensityBasedStrategy implements CleaningStrategy {
             return candidates;
         }
         
-        LOGGER.debug("Applying density-based strategy to {} candidates with radius {} and threshold {}", 
+        ArisLogger.debug("Applying density-based strategy to {} candidates with radius {} and threshold {}", 
                     candidates.size(), checkRadius, densityThreshold);
         
         // 按位置分组，计算密度
@@ -56,7 +54,7 @@ public class DensityBasedStrategy implements CleaningStrategy {
             }
         }
         
-        LOGGER.debug("Selected {} entities for removal based on density", entitiesToRemove.size());
+        ArisLogger.debug("Selected {} entities for removal based on density", entitiesToRemove.size());
         return entitiesToRemove;
     }
     
@@ -128,7 +126,7 @@ public class DensityBasedStrategy implements CleaningStrategy {
     public void setCheckRadius(double radius) {
         if (radius > 0) {
             this.checkRadius = radius;
-            LOGGER.info("Density-based strategy check radius set to: {}", radius);
+            ArisLogger.info("Density-based strategy check radius set to: {}", radius);
         }
     }
     
@@ -138,7 +136,7 @@ public class DensityBasedStrategy implements CleaningStrategy {
     public void setDensityThreshold(int threshold) {
         if (threshold > 0) {
             this.densityThreshold = threshold;
-            LOGGER.info("Density-based strategy threshold set to: {}", threshold);
+            ArisLogger.info("Density-based strategy threshold set to: {}", threshold);
         }
     }
     
@@ -175,7 +173,7 @@ public class DensityBasedStrategy implements CleaningStrategy {
     @Override
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-        LOGGER.info("DensityBasedStrategy enabled: {}", enabled);
+        ArisLogger.info("DensityBasedStrategy enabled: {}", enabled);
     }
     
     /**

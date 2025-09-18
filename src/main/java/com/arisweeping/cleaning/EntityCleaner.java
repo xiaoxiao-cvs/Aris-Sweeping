@@ -1,29 +1,32 @@
 package com.arisweeping.cleaning;
+import com.arisweeping.core.ArisLogger;
 
-import com.arisweeping.async.AsyncTaskManager;
-import com.arisweeping.cleaning.filters.ItemEntityFilter;
-import com.arisweeping.cleaning.filters.AnimalDensityFilter;
-import com.arisweeping.cleaning.strategies.CleaningStrategy;
-import com.arisweeping.cleaning.strategies.TimeBasedStrategy;
-import com.arisweeping.cleaning.strategies.DistanceBasedStrategy;
-import com.arisweeping.cleaning.strategies.DensityBasedStrategy;
-import com.arisweeping.data.ConfigData;
-import com.arisweeping.tasks.models.TaskResult;
-import com.mojang.logging.LogUtils;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.level.ChunkPos;
-import org.slf4j.Logger;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+
+
+import com.arisweeping.async.AsyncTaskManager;
+import com.arisweeping.cleaning.filters.AnimalDensityFilter;
+import com.arisweeping.cleaning.filters.ItemEntityFilter;
+import com.arisweeping.cleaning.strategies.CleaningStrategy;
+import com.arisweeping.cleaning.strategies.DensityBasedStrategy;
+import com.arisweeping.cleaning.strategies.DistanceBasedStrategy;
+import com.arisweeping.cleaning.strategies.TimeBasedStrategy;
+import com.arisweeping.data.ConfigData;
+
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.phys.AABB;
 
 /**
  * 实体清理核心系统
@@ -31,7 +34,6 @@ import java.util.stream.Collectors;
  * 负责异步清理掉落物和过密畜牧实体，支持多种清理策略和过滤器
  */
 public class EntityCleaner {
-    private static final Logger LOGGER = LogUtils.getLogger();
     
     private final AsyncTaskManager asyncTaskManager;
     private final ConfigData configData;
@@ -58,7 +60,7 @@ public class EntityCleaner {
         this.strategies = new ConcurrentHashMap<>();
         initializeStrategies();
         
-        LOGGER.info("EntityCleaner initialized with {} strategies", strategies.size());
+        ArisLogger.info("EntityCleaner initialized with {} strategies", strategies.size());
     }
     
     /**
@@ -75,7 +77,7 @@ public class EntityCleaner {
      */
     public CompletableFuture<CleaningResult> performCleaningOperation(ServerLevel level, CleaningRequest request) {
         return asyncTaskManager.submitTask(() -> {
-            LOGGER.info("Starting cleaning operation: {}", request);
+            ArisLogger.info("Starting cleaning operation: {}", request);
             
             long startTime = System.currentTimeMillis();
             CleaningResult.Builder resultBuilder = CleaningResult.builder()
@@ -108,13 +110,13 @@ public class EntityCleaner {
                 // 更新统计信息
                 updateStatistics(result);
                 
-                LOGGER.info("Cleaning operation completed: {} items, {} animals removed in {}ms", 
+                ArisLogger.info("Cleaning operation completed: {} items, {} animals removed in {}ms", 
                     result.getItemsRemoved(), result.getAnimalsRemoved(), result.getDuration());
                 
                 return result;
                 
             } catch (Exception e) {
-                LOGGER.error("Cleaning operation failed", e);
+                ArisLogger.error("Cleaning operation failed", e);
                 return resultBuilder
                     .setEndTime(System.currentTimeMillis())
                     .setSuccessful(false)
@@ -128,7 +130,7 @@ public class EntityCleaner {
      * 清理物品实体
      */
     private CleaningResult cleanItems(ServerLevel level, CleaningRequest request) {
-        LOGGER.debug("Starting item cleaning for level: {}", level.dimension());
+        ArisLogger.debug("Starting item cleaning for level: {}", level.dimension());
         
         List<ItemEntity> candidateItems = findItemEntities(level, request);
         List<ItemEntity> itemsToRemove = itemFilter.filter(candidateItems);
@@ -167,7 +169,7 @@ public class EntityCleaner {
      * 清理动物实体
      */
     private CleaningResult cleanAnimals(ServerLevel level, CleaningRequest request) {
-        LOGGER.debug("Starting animal cleaning for level: {}", level.dimension());
+        ArisLogger.debug("Starting animal cleaning for level: {}", level.dimension());
         
         List<Animal> candidateAnimals = findAnimalEntities(level, request);
         List<Animal> animalsToRemove = animalFilter.filter(candidateAnimals);
@@ -212,8 +214,13 @@ public class EntityCleaner {
         if (request.hasSpecificChunks()) {
             // 指定区块范围
             for (ChunkPos chunkPos : request.getChunks()) {
-                level.getChunk(chunkPos.x, chunkPos.z)
-                    .getEntities()
+                // 使用level.getEntities来获取指定区块范围内的实体
+                AABB chunkAABB = new AABB(
+                    chunkPos.getMinBlockX(), level.getMinBuildHeight(), chunkPos.getMinBlockZ(),
+                    chunkPos.getMaxBlockX() + 1, level.getMaxBuildHeight(), chunkPos.getMaxBlockZ() + 1
+                );
+                level.getEntities(null, chunkAABB)
+                    .stream()
                     .filter(entity -> entity instanceof ItemEntity)
                     .map(entity -> (ItemEntity) entity)
                     .forEach(items::add);
@@ -249,8 +256,13 @@ public class EntityCleaner {
         if (request.hasSpecificChunks()) {
             // 指定区块范围
             for (ChunkPos chunkPos : request.getChunks()) {
-                level.getChunk(chunkPos.x, chunkPos.z)
-                    .getEntities()
+                // 使用level.getEntities来获取指定区块范围内的实体
+                AABB chunkAABB = new AABB(
+                    chunkPos.getMinBlockX(), level.getMinBuildHeight(), chunkPos.getMinBlockZ(),
+                    chunkPos.getMaxBlockX() + 1, level.getMaxBuildHeight(), chunkPos.getMaxBlockZ() + 1
+                );
+                level.getEntities(null, chunkAABB)
+                    .stream()
                     .filter(entity -> entity instanceof Animal)
                     .map(entity -> (Animal) entity)
                     .forEach(animals::add);
@@ -287,14 +299,14 @@ public class EntityCleaner {
             }
             
             // 在主线程中安全移除
-            entity.getLevel().getServer().executeIfPossible(() -> {
+            entity.level().getServer().executeIfPossible(() -> {
                 entity.discard();
             });
             
             return true;
             
         } catch (Exception e) {
-            LOGGER.error("Failed to remove entity: {}", entity, e);
+            ArisLogger.error("Failed to remove entity: {}", entity, e);
             return false;
         }
     }

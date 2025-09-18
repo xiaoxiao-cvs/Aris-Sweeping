@@ -1,9 +1,8 @@
 package com.arisweeping.monitoring;
+import com.arisweeping.core.ArisLogger;
 
 import com.arisweeping.async.AsyncTaskManager;
 import com.arisweeping.async.ThreadSafeCounter;
-import com.mojang.logging.LogUtils;
-import org.slf4j.Logger;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -19,7 +18,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * 提供实时性能指标、内存使用追踪和清理效率统计
  */
 public class PerformanceMonitor {
-    private static final Logger LOGGER = LogUtils.getLogger();
     
     // 监控间隔
     private static final int MONITORING_INTERVAL_SECONDS = 5;
@@ -144,7 +142,7 @@ public class PerformanceMonitor {
         this.metricsHistory = new ConcurrentLinkedQueue<>();
         this.recentAlerts = new ConcurrentLinkedQueue<>();
         
-        LOGGER.info("PerformanceMonitor initialized");
+        ArisLogger.info("PerformanceMonitor initialized");
     }
     
     /**
@@ -166,11 +164,11 @@ public class PerformanceMonitor {
      */
     public synchronized void start() {
         if (isRunning) {
-            LOGGER.warn("PerformanceMonitor is already running");
+            ArisLogger.warn("PerformanceMonitor is already running");
             return;
         }
         
-        LOGGER.info("Starting PerformanceMonitor...");
+        ArisLogger.info("Starting PerformanceMonitor...");
         
         monitoringExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "ArisSweeping-PerformanceMonitor");
@@ -203,7 +201,7 @@ public class PerformanceMonitor {
         );
         
         isRunning = true;
-        LOGGER.info("PerformanceMonitor started successfully");
+        ArisLogger.info("PerformanceMonitor started successfully");
     }
     
     /**
@@ -214,7 +212,7 @@ public class PerformanceMonitor {
             return;
         }
         
-        LOGGER.info("Stopping PerformanceMonitor...");
+        ArisLogger.info("Stopping PerformanceMonitor...");
         
         isRunning = false;
         
@@ -230,7 +228,7 @@ public class PerformanceMonitor {
             }
         }
         
-        LOGGER.info("PerformanceMonitor stopped");
+        ArisLogger.info("PerformanceMonitor stopped");
     }
     
     /**
@@ -268,10 +266,10 @@ public class PerformanceMonitor {
             currentMetrics.set(metrics);
             addToHistory(metrics);
             
-            LOGGER.debug("Collected performance metrics: {}", metrics);
+            ArisLogger.debug("Collected performance metrics: {}", metrics);
             
         } catch (Exception e) {
-            LOGGER.error("Failed to collect performance metrics", e);
+            ArisLogger.error("Failed to collect performance metrics", e);
         }
     }
     
@@ -296,11 +294,12 @@ public class PerformanceMonitor {
      */
     private int getActiveAsyncTaskCount() {
         try {
-            // 这里需要从AsyncTaskManager获取活动任务数
-            // 由于当前实现中没有直接的getter，使用估算值
-            return 0; // TODO: 实现实际的活动任务计数
+            if (asyncManager != null) {
+                return asyncManager.getTotalActiveCount();
+            }
+            return 0;
         } catch (Exception e) {
-            LOGGER.debug("Failed to get active async task count", e);
+            ArisLogger.debug("Failed to get active async task count", e);
             return 0;
         }
     }
@@ -382,7 +381,7 @@ public class PerformanceMonitor {
             checkMemoryLeak();
             
         } catch (Exception e) {
-            LOGGER.error("Failed to check performance alerts", e);
+            ArisLogger.error("Failed to check performance alerts", e);
         }
     }
     
@@ -435,13 +434,13 @@ public class PerformanceMonitor {
         // 记录到日志
         switch (level) {
             case INFO:
-                LOGGER.info("Performance Alert: {}", message);
+                ArisLogger.info("Performance Alert: {}", message);
                 break;
             case WARNING:
-                LOGGER.warn("Performance Alert: {}", message);
+                ArisLogger.warn("Performance Alert: {}", message);
                 break;
             case CRITICAL:
-                LOGGER.error("Performance Alert: {}", message);
+                ArisLogger.error("Performance Alert: {}", message);
                 break;
         }
     }
@@ -547,7 +546,7 @@ public class PerformanceMonitor {
         }
         
         long beforeHeap = beforeGC.getHeapMemory().getUsed();
-        LOGGER.info("Performing GC analysis - Memory before GC: {} MB", beforeHeap / 1024 / 1024);
+        ArisLogger.info("Performing GC analysis - Memory before GC: {} MB", beforeHeap / 1024 / 1024);
         
         // 建议垃圾回收
         System.gc();
@@ -567,7 +566,7 @@ public class PerformanceMonitor {
             long afterHeap = afterGC.getHeapMemory().getUsed();
             long freedMemory = beforeHeap - afterHeap;
             
-            LOGGER.info("GC analysis completed - Memory after GC: {} MB, Freed: {} MB", 
+            ArisLogger.info("GC analysis completed - Memory after GC: {} MB, Freed: {} MB", 
                        afterHeap / 1024 / 1024, freedMemory / 1024 / 1024);
             
             if (freedMemory > 10 * 1024 * 1024) { // 超过10MB

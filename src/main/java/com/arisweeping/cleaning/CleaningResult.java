@@ -107,8 +107,18 @@ public class CleaningResult {
             return this;
         }
         
+        public Builder setItemsRemoved(int count) {
+            this.itemsRemoved = count;
+            return this;
+        }
+        
         public Builder addAnimalsRemoved(int count) {
             this.animalsRemoved += count;
+            return this;
+        }
+        
+        public Builder setAnimalsRemoved(int count) {
+            this.animalsRemoved = count;
             return this;
         }
         

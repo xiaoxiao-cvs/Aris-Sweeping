@@ -1,13 +1,12 @@
 package com.arisweeping.network;
+import com.arisweeping.core.ArisLogger;
 
 import com.arisweeping.core.ArisSweepingMod;
 import com.arisweeping.network.packets.*;
-import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
-import org.slf4j.Logger;
 
 /**
  * 网络数据包处理器
@@ -15,7 +14,6 @@ import org.slf4j.Logger;
  */
 public class PacketHandler {
     
-    private static final Logger LOGGER = LogUtils.getLogger();
     private static final String PROTOCOL_VERSION = "1";
     
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
@@ -31,7 +29,7 @@ public class PacketHandler {
      * 注册所有数据包类型
      */
     public static void register() {
-        LOGGER.info("Registering network packets for ArisSweeping...");
+        ArisLogger.info("Registering network packets for ArisSweeping...");
         
         // 配置同步数据包
         INSTANCE.messageBuilder(ConfigSyncPacket.class, messageId++)
@@ -68,7 +66,7 @@ public class PacketHandler {
                 .consumerMainThread(StatisticsPacket::handle)
                 .add();
         
-        LOGGER.info("Registered {} network packet types", messageId);
+        ArisLogger.info("Registered {} network packet types", messageId);
     }
     
     /**

@@ -318,6 +318,7 @@ public class ConfigData {
      */
     public class AnimalCleaningConfig {
         public boolean enabled = false;
+        public String strategy = "density_based";
         private int maxAnimalsPerChunk = 20;
         private int checkRadius = 5;
         private boolean protectBreeding = true;
@@ -326,6 +327,9 @@ public class ConfigData {
         
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        
+        public String getStrategy() { return strategy; }
+        public void setStrategy(String strategy) { this.strategy = strategy; }
         
         public int getMaxAnimalsPerChunk() { return maxAnimalsPerChunk; }
         public void setMaxAnimalsPerChunk(int maxAnimalsPerChunk) { this.maxAnimalsPerChunk = maxAnimalsPerChunk; }

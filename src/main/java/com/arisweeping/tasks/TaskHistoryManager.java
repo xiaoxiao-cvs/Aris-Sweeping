@@ -1,10 +1,9 @@
 package com.arisweeping.tasks;
+import com.arisweeping.core.ArisLogger;
 
 import com.arisweeping.core.Constants;
 import com.arisweeping.tasks.models.TaskExecution;
 import com.arisweeping.tasks.models.TaskResult;
-import com.mojang.logging.LogUtils;
-import org.slf4j.Logger;
 
 import java.time.Instant;
 import java.util.*;
@@ -22,7 +21,6 @@ import java.util.stream.Collectors;
  * 负责任务执行历史存储、性能数据统计和历史数据清理机制
  */
 public class TaskHistoryManager {
-    private static final Logger LOGGER = LogUtils.getLogger();
     
     private final int maxHistorySize;
     private final long dataRetentionDays;
@@ -55,7 +53,7 @@ public class TaskHistoryManager {
         this.maxHistorySize = maxHistorySize;
         this.dataRetentionDays = dataRetentionDays;
         
-        LOGGER.info("TaskHistoryManager initialized with max size: {}, retention: {} days", 
+        ArisLogger.info("TaskHistoryManager initialized with max size: {}, retention: {} days", 
                    maxHistorySize, dataRetentionDays);
         
         // 启动定期清理任务
@@ -67,7 +65,7 @@ public class TaskHistoryManager {
      */
     public void recordTask(TaskExecution execution, TaskResult result) {
         if (execution == null || result == null) {
-            LOGGER.warn("Cannot record task with null execution or result");
+            ArisLogger.warn("Cannot record task with null execution or result");
             return;
         }
         
@@ -100,10 +98,10 @@ public class TaskHistoryManager {
             // 更新统计信息
             updateStatistics(record);
             
-            LOGGER.debug("Recorded task history: {} - {}", taskId, execution.getTaskType());
+            ArisLogger.debug("Recorded task history: {} - {}", taskId, execution.getTaskType());
             
         } catch (Exception e) {
-            LOGGER.error("Failed to record task history for: {}", taskId, e);
+            ArisLogger.error("Failed to record task history for: {}", taskId, e);
         }
     }
     
@@ -232,7 +230,7 @@ public class TaskHistoryManager {
         totalFailedTasks.set(0);
         totalExecutionTimeMs.set(0);
         
-        LOGGER.info("Cleared all task history data");
+        ArisLogger.info("Cleared all task history data");
     }
     
     /**
@@ -265,7 +263,7 @@ public class TaskHistoryManager {
             TaskHistoryRecord oldest = historyQueue.poll();
             if (oldest != null) {
                 historyMap.remove(oldest.getTaskId());
-                LOGGER.debug("Removed oldest history record: {}", oldest.getTaskId());
+                ArisLogger.debug("Removed oldest history record: {}", oldest.getTaskId());
             }
         }
     }
@@ -281,7 +279,7 @@ public class TaskHistoryManager {
             TimeUnit.HOURS
         );
         
-        LOGGER.info("Started periodic cleanup task for expired history data");
+        ArisLogger.info("Started periodic cleanup task for expired history data");
     }
     
     /**
@@ -301,11 +299,11 @@ public class TaskHistoryManager {
             }
             
             if (!expiredRecords.isEmpty()) {
-                LOGGER.info("Cleaned up {} expired history records", expiredRecords.size());
+                ArisLogger.info("Cleaned up {} expired history records", expiredRecords.size());
             }
             
         } catch (Exception e) {
-            LOGGER.error("Error during history data cleanup", e);
+            ArisLogger.error("Error during history data cleanup", e);
         }
     }
     
@@ -313,7 +311,7 @@ public class TaskHistoryManager {
      * 优雅关闭
      */
     public void shutdown() {
-        LOGGER.info("Shutting down TaskHistoryManager...");
+        ArisLogger.info("Shutting down TaskHistoryManager...");
         
         cleanupExecutor.shutdown();
         try {
@@ -325,7 +323,7 @@ public class TaskHistoryManager {
             cleanupExecutor.shutdownNow();
         }
         
-        LOGGER.info("TaskHistoryManager shutdown completed");
+        ArisLogger.info("TaskHistoryManager shutdown completed");
     }
     
     /**

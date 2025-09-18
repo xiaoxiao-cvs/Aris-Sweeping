@@ -1,8 +1,6 @@
 package com.arisweeping.core;
 
 import com.arisweeping.data.ConfigData;
-import com.mojang.logging.LogUtils;
-import org.slf4j.Logger;
 
 /**
  * 模组配置管理器
@@ -10,30 +8,91 @@ import org.slf4j.Logger;
  * 负责管理模组的配置初始化和加载
  */
 public class ModConfig {
-    private static final Logger LOGGER = LogUtils.getLogger();
     private static boolean initialized = false;
+    private static volatile ConfigData configData = null;
     
     /**
      * 初始化配置系统
      */
     public static void initialize() {
         if (initialized) {
-            LOGGER.warn("ModConfig already initialized, skipping...");
+            ArisLogger.warn("ModConfig 已经初始化，跳过...");
             return;
         }
         
         try {
-            LOGGER.info("Initializing mod configuration...");
+            long startTime = System.currentTimeMillis();
+            ArisLogger.logStartupPhase("CONFIG", "正在初始化模组配置系统...");
             
-            // 这里将在后续实现配置文件的读取和初始化
-            // 目前只是标记为已初始化
+            // 初始化配置管理器
+            ConfigManager.initialize();
+            
+            // 加载配置数据
+            loadConfig();
+            
             initialized = true;
             
-            LOGGER.info("Mod configuration initialized successfully.");
+            long duration = System.currentTimeMillis() - startTime;
+            ArisLogger.logStartupSuccess("配置系统", duration);
         } catch (Exception e) {
-            LOGGER.error("Failed to initialize mod configuration", e);
-            throw new RuntimeException("Configuration initialization failed", e);
+            ArisLogger.logStartupFailure("配置系统", e);
+            throw new RuntimeException("配置系统初始化失败", e);
         }
+    }
+    
+    /**
+     * 加载配置数据
+     */
+    private static void loadConfig() {
+        try {
+            configData = ConfigManager.loadConfig();
+            ArisLogger.logConfigStatus("配置加载", true, "配置文件路径: " + ConfigManager.getConfigPath());
+        } catch (Exception e) {
+            ArisLogger.logConfigStatus("配置加载", false, e.getMessage());
+            configData = new ConfigData(); // 使用默认配置
+        }
+    }
+    
+    /**
+     * 获取配置数据实例
+     */
+    public static ConfigData getConfig() {
+        if (configData == null) {
+            ArisLogger.warn("在初始化前获取配置，返回默认配置");
+            return new ConfigData();
+        }
+        return configData;
+    }
+    
+    /**
+     * 更新配置数据
+     */
+    public static void updateConfig(ConfigData newConfig) {
+        if (newConfig == null) {
+            ArisLogger.error("尝试使用 null 数据更新配置");
+            return;
+        }
+        
+        configData = newConfig;
+        
+        // 保存配置到文件
+        if (ConfigManager.saveConfig(configData)) {
+            ArisLogger.info("配置已更新并保存");
+        } else {
+            ArisLogger.warn("配置已更新但保存失败");
+        }
+    }
+    
+    /**
+     * 保存当前配置到文件
+     */
+    public static boolean saveConfig() {
+        if (configData == null) {
+            ArisLogger.warn("配置数据为null，无法保存");
+            return false;
+        }
+        
+        return ConfigManager.saveConfig(configData);
     }
     
     /**
@@ -47,8 +106,16 @@ public class ModConfig {
      * 重新加载配置
      */
     public static void reload() {
-        LOGGER.info("Reloading mod configuration...");
-        initialized = false;
-        initialize();
+        ArisLogger.info("重新加载模组配置...");
+        loadConfig();
+    }
+    
+    /**
+     * 重置配置为默认值
+     */
+    public static ConfigData resetToDefaults() {
+        ArisLogger.info("重置配置为默认值...");
+        configData = ConfigManager.resetConfig();
+        return configData;
     }
 }

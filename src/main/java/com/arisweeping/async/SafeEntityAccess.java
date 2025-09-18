@@ -1,8 +1,7 @@
 package com.arisweeping.async;
+import com.arisweeping.core.ArisLogger;
 
 import com.arisweeping.core.Constants;
-import com.mojang.logging.LogUtils;
-import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -18,7 +17,6 @@ import java.util.stream.Collectors;
  * 确保在多线程环境下安全地访问和操作 Minecraft 实体
  */
 public class SafeEntityAccess {
-    private static final Logger LOGGER = LogUtils.getLogger();
     
     private final ExecutorService mainThreadExecutor;
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
@@ -38,7 +36,7 @@ public class SafeEntityAccess {
         this.operationProcessor.setDaemon(true);
         this.operationProcessor.start();
         
-        LOGGER.info("SafeEntityAccess initialized");
+        ArisLogger.info("SafeEntityAccess initialized");
     }
     
     /**
@@ -54,7 +52,7 @@ public class SafeEntityAccess {
                 // TODO: 实现实际的实体获取逻辑
                 // 这需要根据 Minecraft 的具体 API 进行实现
                 
-                LOGGER.debug("Getting entity safely: {} from level: {}", entityId, level);
+                ArisLogger.debug("Getting entity safely: {} from level: {}", entityId, level);
                 
                 // 暂时返回空，实际实现需要：
                 // 1. 验证 level 是否有效
@@ -65,7 +63,7 @@ public class SafeEntityAccess {
                 return Optional.<T>empty();
                 
             } catch (Exception e) {
-                LOGGER.error("Failed to get entity safely: {}", entityId, e);
+                ArisLogger.error("Failed to get entity safely: {}", entityId, e);
                 return Optional.<T>empty();
             }
         }, mainThreadExecutor);
@@ -83,14 +81,14 @@ public class SafeEntityAccess {
             try {
                 // 验证实体状态
                 if (!isEntityValid(entity)) {
-                    LOGGER.debug("Entity is not valid for removal: {}", entity);
+                    ArisLogger.debug("Entity is not valid for removal: {}", entity);
                     return false;
                 }
                 
                 // TODO: 实现实际的实体删除逻辑
                 // 这需要调用 Minecraft 的实体删除 API
                 
-                LOGGER.debug("Removing entity safely: {}", entity);
+                ArisLogger.debug("Removing entity safely: {}", entity);
                 
                 // 暂时返回 true，实际实现需要：
                 // 1. 检查实体是否仍然存在
@@ -101,7 +99,7 @@ public class SafeEntityAccess {
                 return true;
                 
             } catch (Exception e) {
-                LOGGER.error("Failed to remove entity safely: {}", entity, e);
+                ArisLogger.error("Failed to remove entity safely: {}", entity, e);
                 return false;
             }
         }, mainThreadExecutor);
@@ -122,15 +120,15 @@ public class SafeEntityAccess {
                 try {
                     if (isEntityValid(entity)) {
                         // TODO: 实现实际的删除逻辑
-                        LOGGER.debug("Removing entity in batch: {}", entity);
+                        ArisLogger.debug("Removing entity in batch: {}", entity);
                         removedCount++;
                     }
                 } catch (Exception e) {
-                    LOGGER.error("Failed to remove entity in batch: {}", entity, e);
+                    ArisLogger.error("Failed to remove entity in batch: {}", entity, e);
                 }
             }
             
-            LOGGER.info("Batch removal completed: {} entities removed out of {} candidates", 
+            ArisLogger.info("Batch removal completed: {} entities removed out of {} candidates", 
                        removedCount, entities.size());
             return removedCount;
         }, mainThreadExecutor);
@@ -154,7 +152,7 @@ public class SafeEntityAccess {
             return true; // 暂时返回 true
             
         } catch (Exception e) {
-            LOGGER.error("Error validating entity: {}", entity, e);
+            ArisLogger.error("Error validating entity: {}", entity, e);
             return false;
         }
     }
@@ -177,7 +175,7 @@ public class SafeEntityAccess {
                 return Optional.ofNullable(result);
                 
             } catch (Exception e) {
-                LOGGER.error("Error accessing entity safely: {}", entity, e);
+                ArisLogger.error("Error accessing entity safely: {}", entity, e);
                 return Optional.<T>empty();
             }
         }, mainThreadExecutor);
@@ -201,7 +199,7 @@ public class SafeEntityAccess {
                 return true;
                 
             } catch (Exception e) {
-                LOGGER.error("Error modifying entity safely: {}", entity, e);
+                ArisLogger.error("Error modifying entity safely: {}", entity, e);
                 return false;
             }
         }, mainThreadExecutor);
@@ -231,7 +229,7 @@ public class SafeEntityAccess {
             operationQueue.offer(operation, Constants.TaskManagement.DEFAULT_TASK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOGGER.error("Interrupted while queueing entity operation", e);
+            ArisLogger.error("Interrupted while queueing entity operation", e);
         }
         
         return operation.getFuture();
@@ -248,7 +246,7 @@ public class SafeEntityAccess {
                     try {
                         operation.execute();
                     } catch (Exception e) {
-                        LOGGER.error("Error executing entity operation", e);
+                        ArisLogger.error("Error executing entity operation", e);
                         operation.completeExceptionally(e);
                     }
                 }
@@ -258,7 +256,7 @@ public class SafeEntityAccess {
             }
         }
         
-        LOGGER.info("Entity operation processor stopped");
+        ArisLogger.info("Entity operation processor stopped");
     }
     
     /**
@@ -276,7 +274,7 @@ public class SafeEntityAccess {
      */
     public void shutdown() {
         if (isShutdown.compareAndSet(false, true)) {
-            LOGGER.info("Shutting down SafeEntityAccess...");
+            ArisLogger.info("Shutting down SafeEntityAccess...");
             
             operationProcessor.interrupt();
             mainThreadExecutor.shutdown();
@@ -290,7 +288,7 @@ public class SafeEntityAccess {
                 mainThreadExecutor.shutdownNow();
             }
             
-            LOGGER.info("SafeEntityAccess shutdown completed");
+            ArisLogger.info("SafeEntityAccess shutdown completed");
         }
     }
     

@@ -1,14 +1,14 @@
 package com.arisweeping.async;
 
+import com.arisweeping.core.ArisLogger;
 import com.arisweeping.core.Constants;
-import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
-import org.slf4j.Logger;
+import net.minecraft.world.phys.AABB;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
  * 提供分块异步处理、负载均衡和进度追踪功能
  */
 public class ChunkProcessor {
-    private static final Logger LOGGER = LogUtils.getLogger();
     
     /**
      * 区块处理结果
@@ -182,14 +181,14 @@ public class ChunkProcessor {
             Predicate<Entity> entityFilter, Function<Entity, Boolean> processor) {
         
         UUID operationId = UUID.randomUUID();
-        LOGGER.info("Starting chunk processing operation: {} at {} with radius {}", 
+        ArisLogger.info("Starting chunk processing operation: {} at {} with radius {}", 
                    operationId, center, radius);
         
         // 收集需要处理的区块
         List<ChunkPos> chunksToProcess = collectChunksInRange(level, center, radius);
         
         if (chunksToProcess.isEmpty()) {
-            LOGGER.warn("No chunks found to process for operation: {}", operationId);
+            ArisLogger.warn("No chunks found to process for operation: {}", operationId);
             return CompletableFuture.completedFuture(Collections.emptyList());
         }
         
@@ -200,16 +199,16 @@ public class ChunkProcessor {
         // 按负载排序区块（优先处理实体较多的区块）
         List<ChunkLoadInfo> sortedChunks = prioritizeChunks(level, chunksToProcess);
         
-        LOGGER.info("Processing {} chunks for operation: {}", sortedChunks.size(), operationId);
+        ArisLogger.info("Processing {} chunks for operation: {}", sortedChunks.size(), operationId);
         
         // 并行处理区块
         return processChunksParallel(level, sortedChunks, entityFilter, processor, progress)
                 .whenComplete((results, throwable) -> {
                     activeOperations.remove(operationId);
                     if (throwable != null) {
-                        LOGGER.error("Chunk processing operation {} failed", operationId, throwable);
+                        ArisLogger.error("Chunk processing operation {} failed", operationId, throwable);
                     } else {
-                        LOGGER.info("Chunk processing operation {} completed: {}", operationId, progress);
+                        ArisLogger.info("Chunk processing operation {} completed: {}", operationId, progress);
                     }
                 });
     }
@@ -242,10 +241,10 @@ public class ChunkProcessor {
      */
     private boolean isChunkLoaded(ServerLevel level, ChunkPos pos) {
         try {
-            ChunkHolder chunkHolder = level.getChunkSource().chunkMap.getUpdatingChunkIfPresent(pos.toLong());
-            return chunkHolder != null && chunkHolder.getFullChunk() != null;
+            // 使用更安全的方法检查区块是否已加载
+            return level.isLoaded(new BlockPos(pos.getMinBlockX(), 64, pos.getMinBlockZ()));
         } catch (Exception e) {
-            LOGGER.debug("Failed to check chunk loading status for {}: {}", pos, e.getMessage());
+            ArisLogger.debug("Failed to check chunk loading status for {}: {}", pos, e.getMessage());
             return false;
         }
     }
@@ -258,14 +257,18 @@ public class ChunkProcessor {
                 .map(pos -> {
                     try {
                         LevelChunk chunk = level.getChunk(pos.x, pos.z);
-                        int entityCount = chunk.getEntities().getAllEntities().size();
+                        // 在Minecraft 1.20.1中，我们使用level来获取区块内的实体
+                        List<net.minecraft.world.entity.Entity> entities = level.getEntities(null, 
+                            new net.minecraft.world.phys.AABB(pos.getMinBlockX(), level.getMinBuildHeight(), pos.getMinBlockZ(),
+                                                             pos.getMaxBlockX() + 1, level.getMaxBuildHeight(), pos.getMaxBlockZ() + 1));
+                        int entityCount = entities.size();
                         
                         // 计算优先级：实体数量越多，优先级越高
                         int priority = Math.min(entityCount, 100); // 最大优先级为100
                         
                         return new ChunkLoadInfo(pos, entityCount, priority);
                     } catch (Exception e) {
-                        LOGGER.debug("Failed to get entity count for chunk {}: {}", pos, e.getMessage());
+                        ArisLogger.debug("Failed to get entity count for chunk {}: {}", pos, e.getMessage());
                         return new ChunkLoadInfo(pos, 0, 0);
                     }
                 })
@@ -330,7 +333,7 @@ public class ChunkProcessor {
         ChunkPos pos = chunkInfo.getPos();
         
         try {
-            LOGGER.debug("Processing chunk: {}", pos);
+            ArisLogger.debug("Processing chunk: {}", pos);
             
             // 获取区块
             LevelChunk chunk = level.getChunk(pos.x, pos.z);
@@ -341,7 +344,12 @@ public class ChunkProcessor {
             
             // 获取区块中的所有实体
             List<Entity> allEntities = new ArrayList<>();
-            chunk.getEntities().getAllEntities().forEach(allEntities::add);
+            // 使用level.getEntities获取指定区块范围内的实体
+            AABB chunkAABB = new AABB(
+                pos.getMinBlockX(), level.getMinBuildHeight(), pos.getMinBlockZ(),
+                pos.getMaxBlockX() + 1, level.getMaxBuildHeight(), pos.getMaxBlockZ() + 1
+            );
+            allEntities.addAll(level.getEntities(null, chunkAABB));
             
             if (allEntities.isEmpty()) {
                 ChunkProcessingResult result = ChunkProcessingResult.success(pos, 0, 0, 
@@ -364,7 +372,7 @@ public class ChunkProcessor {
                         }
                     }
                 } catch (Exception e) {
-                    LOGGER.warn("Failed to process entity {} in chunk {}: {}", 
+                    ArisLogger.warn("Failed to process entity {} in chunk {}: {}", 
                               entity.getId(), pos, e.getMessage());
                 }
             }
@@ -374,13 +382,13 @@ public class ChunkProcessor {
                                                                        System.currentTimeMillis() - startTime);
             progress.recordResult(result);
             
-            LOGGER.debug("Completed processing chunk {}: processed={}, removed={}", 
+            ArisLogger.debug("Completed processing chunk {}: processed={}, removed={}", 
                         pos, entitiesProcessed, entitiesRemoved);
             
             return result;
             
         } catch (Exception e) {
-            LOGGER.error("Error processing chunk {}: {}", pos, e.getMessage(), e);
+            ArisLogger.error("Error processing chunk {}: {}", pos, e.getMessage(), e);
             ChunkProcessingResult result = ChunkProcessingResult.failure(pos, e.getMessage(), 
                                                                        System.currentTimeMillis() - startTime);
             progress.recordResult(result);

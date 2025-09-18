@@ -1,14 +1,15 @@
 package com.arisweeping.gui;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.arisweeping.core.ArisSweepingMod;
 import com.arisweeping.data.ConfigData;
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * MiniHUD风格的配置主界面
@@ -219,7 +220,7 @@ public class MiniHUDConfigScreen extends Screen {
     /**
      * 渲染背景
      */
-    private void renderBackground(GuiGraphics guiGraphics) {
+    public void renderBackground(GuiGraphics guiGraphics) {
         // 主背景
         guiGraphics.fill(0, 0, width, height, BACKGROUND_COLOR);
         

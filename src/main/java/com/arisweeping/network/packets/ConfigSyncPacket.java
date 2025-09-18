@@ -1,11 +1,10 @@
 package com.arisweeping.network.packets;
+import com.arisweeping.core.ArisLogger;
 
 import com.arisweeping.core.ArisSweepingMod;
 import com.arisweeping.data.ConfigData;
-import com.mojang.logging.LogUtils;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
-import org.slf4j.Logger;
 
 import java.util.function.Supplier;
 import java.util.ArrayList;
@@ -15,7 +14,6 @@ import java.util.ArrayList;
  * 用于服务器向客户端同步配置数据
  */
 public class ConfigSyncPacket {
-    private static final Logger LOGGER = LogUtils.getLogger();
     
     private final ConfigData configData;
     
@@ -55,9 +53,9 @@ public class ConfigSyncPacket {
             buffer.writeBoolean(animalConfig.isProtectBreeding());
             buffer.writeBoolean(animalConfig.isProtectBabies());
             
-            LOGGER.debug("Encoded ConfigSyncPacket successfully");
+            ArisLogger.debug("Encoded ConfigSyncPacket successfully");
         } catch (Exception e) {
-            LOGGER.error("Failed to encode ConfigSyncPacket", e);
+            ArisLogger.error("Failed to encode ConfigSyncPacket", e);
             throw e;
         }
     }
@@ -100,10 +98,10 @@ public class ConfigSyncPacket {
             animalConfig.setProtectBreeding(buffer.readBoolean());
             animalConfig.setProtectBabies(buffer.readBoolean());
             
-            LOGGER.debug("Decoded ConfigSyncPacket successfully");
+            ArisLogger.debug("Decoded ConfigSyncPacket successfully");
             return new ConfigSyncPacket(configData);
         } catch (Exception e) {
-            LOGGER.error("Failed to decode ConfigSyncPacket", e);
+            ArisLogger.error("Failed to decode ConfigSyncPacket", e);
             throw e;
         }
     }
@@ -115,14 +113,14 @@ public class ConfigSyncPacket {
         NetworkEvent.Context ctx = context.get();
         ctx.enqueueWork(() -> {
             try {
-                LOGGER.debug("Processing ConfigSyncPacket on client");
+                ArisLogger.debug("Processing ConfigSyncPacket on client");
                 
                 // 更新客户端配置数据
                 ArisSweepingMod.updateConfigData(packet.configData);
                 
-                LOGGER.info("Client configuration synchronized successfully");
+                ArisLogger.info("Client configuration synchronized successfully");
             } catch (Exception e) {
-                LOGGER.error("Failed to process ConfigSyncPacket", e);
+                ArisLogger.error("Failed to process ConfigSyncPacket", e);
             }
         });
         ctx.setPacketHandled(true);
