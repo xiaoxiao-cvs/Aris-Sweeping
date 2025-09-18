@@ -1,6 +1,8 @@
 package com.arisweeping.data;
 
 import com.arisweeping.core.Constants;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * 配置数据管理类
@@ -39,8 +41,14 @@ public class ConfigData {
     private boolean showStatistics = true;
     private int guiScale = 1;
     
+    // 配置对象
+    public final ItemCleaningConfig itemCleaning;
+    public final AnimalCleaningConfig animalCleaning;
+    
     public ConfigData() {
         // 使用默认值初始化
+        this.itemCleaning = new ItemCleaningConfig();
+        this.animalCleaning = new AnimalCleaningConfig();
     }
     
     // Getter和Setter方法
@@ -247,5 +255,91 @@ public class ConfigData {
                 ", animalDensityThreshold=" + animalDensityThreshold +
                 ", threadPoolSize=" + threadPoolSize +
                 '}';
+    }
+    
+    /**
+     * 获取物品清理配置
+     */
+    public ItemCleaningConfig getItemCleaningConfig() {
+        return itemCleaning;
+    }
+    
+    /**
+     * 获取动物清理配置
+     */
+    public AnimalCleaningConfig getAnimalCleaningConfig() {
+        return animalCleaning;
+    }
+    
+    /**
+     * 保存配置到文件
+     */
+    public void save() {
+        // TODO: 实现配置保存功能
+        // 可以保存到文件或使用Forge的配置系统
+    }
+    
+    /**
+     * 物品清理配置类
+     */
+    public class ItemCleaningConfig {
+        public boolean enabled = true;
+        public String strategy = "age_based";
+        private List<String> itemWhitelist = new ArrayList<>();
+        private List<String> itemBlacklist = new ArrayList<>();
+        private int itemLifetimeSeconds = 300; // 5分钟
+        private int chunkRange = 3;
+        private int minItemCount = 10;
+        
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        
+        public String getStrategy() { return strategy; }
+        public void setStrategy(String strategy) { this.strategy = strategy; }
+        
+        public List<String> getItemWhitelist() { return new ArrayList<>(itemWhitelist); }
+        public void setItemWhitelist(List<String> itemWhitelist) { this.itemWhitelist = new ArrayList<>(itemWhitelist); }
+        
+        public List<String> getItemBlacklist() { return new ArrayList<>(itemBlacklist); }
+        public void setItemBlacklist(List<String> itemBlacklist) { this.itemBlacklist = new ArrayList<>(itemBlacklist); }
+        
+        public int getItemLifetimeSeconds() { return itemLifetimeSeconds; }
+        public void setItemLifetimeSeconds(int itemLifetimeSeconds) { this.itemLifetimeSeconds = itemLifetimeSeconds; }
+        
+        public int getChunkRange() { return chunkRange; }
+        public void setChunkRange(int chunkRange) { this.chunkRange = chunkRange; }
+        
+        public int getMinItemCount() { return minItemCount; }
+        public void setMinItemCount(int minItemCount) { this.minItemCount = minItemCount; }
+    }
+    
+    /**
+     * 动物清理配置类
+     */
+    public class AnimalCleaningConfig {
+        public boolean enabled = false;
+        private int maxAnimalsPerChunk = 20;
+        private int checkRadius = 5;
+        private boolean protectBreeding = true;
+        private boolean protectBabies = true;
+        private List<String> excludedEntityTypes = new ArrayList<>();
+        
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        
+        public int getMaxAnimalsPerChunk() { return maxAnimalsPerChunk; }
+        public void setMaxAnimalsPerChunk(int maxAnimalsPerChunk) { this.maxAnimalsPerChunk = maxAnimalsPerChunk; }
+        
+        public int getCheckRadius() { return checkRadius; }
+        public void setCheckRadius(int checkRadius) { this.checkRadius = checkRadius; }
+        
+        public boolean isProtectBreeding() { return protectBreeding; }
+        public void setProtectBreeding(boolean protectBreeding) { this.protectBreeding = protectBreeding; }
+        
+        public boolean isProtectBabies() { return protectBabies; }
+        public void setProtectBabies(boolean protectBabies) { this.protectBabies = protectBabies; }
+        
+        public List<String> getExcludedEntityTypes() { return new ArrayList<>(excludedEntityTypes); }
+        public void setExcludedEntityTypes(List<String> excludedEntityTypes) { this.excludedEntityTypes = new ArrayList<>(excludedEntityTypes); }
     }
 }

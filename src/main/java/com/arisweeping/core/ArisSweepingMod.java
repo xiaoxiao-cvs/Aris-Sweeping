@@ -114,4 +114,12 @@ public class ArisSweepingMod {
     public static com.arisweeping.data.ConfigData getConfigData() {
         return configData;
     }
+    
+    /**
+     * 更新配置数据
+     */
+    public static void updateConfigData(com.arisweeping.data.ConfigData newConfigData) {
+        configData = newConfigData;
+        LOGGER.debug("Configuration data updated");
+    }
 }

@@ -96,6 +96,20 @@ public class AsyncTaskManager {
     }
     
     /**
+     * 提交任务（通用方法，默认使用核心线程池）
+     */
+    public <T> CompletableFuture<T> submitTask(Callable<T> task) {
+        return submitCoreTask(task);
+    }
+    
+    /**
+     * 提交任务（无返回值，默认使用核心线程池）
+     */
+    public CompletableFuture<Void> submitTask(Runnable task) {
+        return submitCoreTask(task);
+    }
+    
+    /**
      * 提交IO任务
      */
     public <T> CompletableFuture<T> submitIOTask(Callable<T> task) {

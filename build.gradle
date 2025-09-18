@@ -2,14 +2,19 @@ buildscript {
     repositories {
         // These repositories are only for Gradle plugins, put any other repositories in the repository block further below
         maven { url = 'https://maven.minecraftforge.net' }
+        maven { url = 'https://maven.parchmentmc.org' } // 添加ParchmentMC仓库
+        gradlePluginPortal()
         mavenCentral()
     }
     dependencies {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '6.0.+', changing: true
+        // classpath 'org.parchmentmc:librarian:1.+' // 暂时注释掉Parchment
     }
 }
 apply plugin: 'net.minecraftforge.gradle'
+// apply plugin: 'org.parchmentmc.librarian.forgegradle' // 暂时注释掉Parchment插件
 apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
 
 version = '1.0.0-alpha'
 group = 'com.arisweeping'
@@ -20,6 +25,7 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
 
 minecraft {
+    // 使用Parchment映射获得更好的参数名
     mappings channel: 'official', version: '1.20.1'
     
     runs {
@@ -85,6 +91,10 @@ repositories {
         name = "Sponge Snapshots"
         url = "https://repo.spongepowered.org/repository/maven-public"
     }
+    maven {
+        name = 'ParchmentMC'
+        url = 'https://maven.parchmentmc.org'
+    }
 }
 
 dependencies {
@@ -95,6 +105,9 @@ dependencies {
     
     // 注解处理
     compileOnly 'org.jetbrains:annotations:24.0.1'
+    
+    // SLF4J日志系统 (Minecraft/Forge已经包含了实现)
+    compileOnly 'org.slf4j:slf4j-api:1.7.36'
 }
 
 tasks.named('processResources', ProcessResources).configure {
@@ -121,6 +134,7 @@ tasks.named('processResources', ProcessResources).configure {
 publishing {
     publications {
         maven(MavenPublication) {
+            from components.java
             artifact jar
         }
     }
