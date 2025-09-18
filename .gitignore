@@ -1,0 +1,72 @@
+# macOS 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Java 编译文件
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# Maven/Gradle 编译输出
+/target/
+/build/
+/out/
+/bin/
+
+# Gradle 文件
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# IDE 文件
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# 操作系统生成的文件
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# JVM 崩溃日志
+hs_err_pid*
+
+# Minecraft 开发相关
+run/
+logs/
+crash-reports/
+
+# 运行时生成的文件
+*.pid
+*.seed
+*.pid.lock
+
+# 依赖目录
+node_modules/
+
+# 打包文件
+*.tgz
+*.tar.gz
