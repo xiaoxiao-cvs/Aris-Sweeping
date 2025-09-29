@@ -72,3 +72,4 @@ node_modules/
 *.tar.gz
 
 .github
+/minihud-reference
