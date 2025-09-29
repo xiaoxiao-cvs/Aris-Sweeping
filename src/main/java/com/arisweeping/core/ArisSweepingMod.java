@@ -1,5 +1,7 @@
 package com.arisweeping.core;
 
+import com.arisweeping.config.Configs;
+
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -13,7 +15,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
  * 主要功能：
  * - 异步清理掉落物和过密畜牧实体
  * - 智能任务管理和撤销系统
- * - 游戏内可视化配置界面
+ * - 游戏内可视化配置界面（基于 malilib）
  * - 高性能多线程处理架构
  */
 @Mod(ArisSweepingMod.MODID)
@@ -27,6 +29,9 @@ public class ArisSweepingMod {
     private static volatile com.arisweeping.async.AsyncTaskManager taskManager;
     private static volatile com.arisweeping.data.ConfigData configData;
     private static volatile com.arisweeping.tasks.SmartTaskManager smartTaskManager;
+    
+    // 配置处理器实例
+    private static final Configs configHandler = new Configs();
     
     public ArisSweepingMod() {
         // 输出启动横幅
@@ -58,6 +63,10 @@ public class ArisSweepingMod {
                 ArisLogger.info("正在初始化配置数据...");
                 configData = new com.arisweeping.data.ConfigData();
             }
+            
+            // 加载 malilib 配置
+            ArisLogger.info("正在加载 malilib 配置系统...");
+            configHandler.load();
             
             ModInitializer.initializeAll();
             

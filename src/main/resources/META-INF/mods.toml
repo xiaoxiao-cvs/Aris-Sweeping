@@ -48,3 +48,11 @@ description='''${mod_description}'''
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
+
+# MaFgLib UI框架依赖
+[[dependencies.arisweeping]]
+    modId="mafglib"
+    mandatory=true
+    versionRange="[0.1.14,)"
+    ordering="NONE"
+    side="CLIENT"

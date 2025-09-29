@@ -1,8 +1,11 @@
 package com.arisweeping.gui.hud;
 
+import java.util.List;
+
+import com.arisweeping.config.Configs;
 import com.arisweeping.core.ArisLogger;
 import com.arisweeping.core.ArisSweepingMod;
-import com.arisweeping.data.StatisticsCollector;
+import com.arisweeping.hud.HudDataProvider;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -12,142 +15,176 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * HUD管理器
- * 负责管理游戏内的HUD显示和渲染
+ * 重构后的HUD管理器
+ * 基于malilib设计模式，集成InfoToggle配置系统
  */
 @Mod.EventBusSubscriber(modid = ArisSweepingMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class HUDManager {
     
-    private static boolean showHUD = false;
-    private static boolean showDetailedInfo = false;
+    // HUD渲染常量
+    private static final int LINE_HEIGHT = 12;
+    private static final int MARGIN = 4;
+    private static final int BACKGROUND_COLOR = 0x80000000;
+    private static final int TEXT_COLOR = 0xFFFFFF;
     
     /**
-     * 切换HUD显示状态
-     * @return 新的显示状态
-     */
-    public static boolean toggleHUD() {
-        showHUD = !showHUD;
-        ArisLogger.info("HUD显示状态: " + (showHUD ? "开启" : "关闭"));
-        return showHUD;
-    }
-    
-    /**
-     * 设置HUD显示状态
-     */
-    public static void setHUDVisible(boolean visible) {
-        showHUD = visible;
-    }
-    
-    /**
-     * 获取HUD显示状态
-     */
-    public static boolean isHUDVisible() {
-        return showHUD;
-    }
-    
-    /**
-     * 切换详细信息显示
-     */
-    public static boolean toggleDetailedInfo() {
-        showDetailedInfo = !showDetailedInfo;
-        return showDetailedInfo;
-    }
-    
-    /**
-     * 渲染HUD覆盖层
+     * 渲染HUD覆盖层事件处理
      */
     @SubscribeEvent
     public static void onRenderGuiOverlay(RenderGuiOverlayEvent.Post event) {
-        if (!showHUD) return;
+        if (!shouldRenderHud()) {
+            return;
+        }
         
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) return;
+        if (mc.player == null || mc.level == null || mc.screen != null) {
+            return;
+        }
         
         try {
-            renderHUD(event.getGuiGraphics());
+            renderModernHud(event.getGuiGraphics(), mc);
         } catch (Exception e) {
             ArisLogger.error("HUD渲染错误", e);
         }
     }
     
     /**
-     * 渲染HUD内容
+     * 检查是否应该渲染HUD
      */
-    private static void renderHUD(GuiGraphics graphics) {
-        Minecraft mc = Minecraft.getInstance();
-        int screenWidth = mc.getWindow().getGuiScaledWidth();
-        int lineHeight = 10;
+    private static boolean shouldRenderHud() {
+        try {
+            // 检查主HUD配置开关
+            return Configs.General.SHOW_HUD.getBooleanValue() && 
+                   HudDataProvider.shouldShowHud();
+        } catch (Exception e) {
+            // 如果配置系统未初始化，使用默认行为
+            return true;
+        }
+    }
+    
+    /**
+     * 渲染现代化的HUD
+     */
+    private static void renderModernHud(GuiGraphics graphics, Minecraft mc) {
+        List<String> hudLines = HudDataProvider.getHudLines();
+        if (hudLines.isEmpty()) {
+            return;
+        }
         
-        // HUD位置 - 左上角
-        int x = 5;
-        int y = 5;
+        // 计算HUD尺寸和位置
+        int maxWidth = calculateMaxWidth(hudLines, mc);
+        int hudHeight = hudLines.size() * LINE_HEIGHT + MARGIN * 2;
+        
+        // HUD位置 - 左上角（稍后可配置）
+        int x = MARGIN;
+        int y = MARGIN;
         
         // 绘制背景
-        int hudWidth = 200;
-        int hudHeight = showDetailedInfo ? 120 : 60;
-        graphics.fill(x - 2, y - 2, x + hudWidth + 2, y + hudHeight + 2, 0x88000000);
-        
-        // 标题
-        graphics.drawString(mc.font, "§bArisSweeping", x, y, 0xFFFFFF);
-        y += lineHeight + 2;
-        
-        // 模组状态
-        boolean enabled = ArisSweepingMod.isEnabled();
-        String statusText = "状态: " + (enabled ? "§a启用" : "§c禁用");
-        graphics.drawString(mc.font, statusText, x, y, 0xFFFFFF);
-        y += lineHeight;
-        
-        // 统计信息
-        try {
-            StatisticsCollector stats = StatisticsCollector.getInstance();
-            if (stats != null) {
-                Object cleanedEntities = stats.getMetric("total_cleaned_entities");
-                String cleanedText = "已清理实体: §e" + (cleanedEntities != null ? cleanedEntities : "0");
-                graphics.drawString(mc.font, cleanedText, x, y, 0xFFFFFF);
-                y += lineHeight;
-                
-                Object cleaningTasks = stats.getMetric("total_cleaning_tasks");
-                String tasksText = "执行任务: §e" + (cleaningTasks != null ? cleaningTasks : "0");
-                graphics.drawString(mc.font, tasksText, x, y, 0xFFFFFF);
-                y += lineHeight;
-            }
-        } catch (Exception e) {
-            graphics.drawString(mc.font, "统计: §c未可用", x, y, 0xFFFFFF);
-            y += lineHeight;
+        if (shouldDrawBackground()) {
+            graphics.fill(x - MARGIN, y - MARGIN, 
+                         x + maxWidth + MARGIN, y + hudHeight, 
+                         BACKGROUND_COLOR);
         }
         
-        // 详细信息
-        if (showDetailedInfo) {
-            y += 5; // 分隔线
-            graphics.drawString(mc.font, "§7--- 详细信息 ---", x, y, 0xFFFFFF);
-            y += lineHeight;
+        // 绘制文本行
+        for (int i = 0; i < hudLines.size(); i++) {
+            String line = hudLines.get(i);
+            int textY = y + i * LINE_HEIGHT;
             
-            // 性能信息
-            try {
-                // 由于PerformanceMonitor需要AsyncTaskManager参数，这里简化处理
-                // 直接获取运行时信息
-                Runtime runtime = Runtime.getRuntime();
-                long freeMemory = runtime.freeMemory() / 1024 / 1024;
-                long totalMemory = runtime.totalMemory() / 1024 / 1024;
-                long usedMemory = totalMemory - freeMemory;
-                
-                String memoryText = String.format("内存: %dMB/%dMB", usedMemory, totalMemory);
-                graphics.drawString(mc.font, memoryText, x, y, 0xFFFFFF);
-                y += lineHeight;
-                
-                // CPU负载
-                graphics.drawString(mc.font, "CPU负载: §a正常", x, y, 0xFFFFFF);
-                y += lineHeight;
-            } catch (Exception e) {
-                graphics.drawString(mc.font, "性能监控: §c错误", x, y, 0xFFFFFF);
-                y += lineHeight;
+            boolean useShadow = shouldUseFontShadow();
+            graphics.drawString(mc.font, line, x, textY, TEXT_COLOR, useShadow);
+        }
+    }
+    
+    /**
+     * 计算最大文本宽度
+     */
+    private static int calculateMaxWidth(List<String> lines, Minecraft mc) {
+        int maxWidth = 0;
+        for (String line : lines) {
+            int width = mc.font.width(line);
+            if (width > maxWidth) {
+                maxWidth = width;
             }
         }
-        
-        // 快捷键提示
-        y += 5;
-        graphics.drawString(mc.font, "§7快捷键:", x, y, 0xFFFFFF);
-        y += lineHeight;
-        graphics.drawString(mc.font, "§7K: 配置 | F9: HUD | J: 开关", x, y, 0xFFFFFF);
+        return maxWidth;
+    }
+    
+    /**
+     * 检查是否绘制背景
+     */
+    private static boolean shouldDrawBackground() {
+        try {
+            return Configs.General.USE_TEXT_BACKGROUND.getBooleanValue();
+        } catch (Exception e) {
+            return true; // 默认绘制背景
+        }
+    }
+    
+    /**
+     * 检查是否使用字体阴影
+     */
+    private static boolean shouldUseFontShadow() {
+        try {
+            return Configs.General.USE_FONT_SHADOW.getBooleanValue();
+        } catch (Exception e) {
+            return true; // 默认使用阴影
+        }
+    }
+    
+    // === 向后兼容的公共API ===
+    
+    /**
+     * 切换HUD显示状态
+     * @deprecated 使用配置系统代替
+     */
+    @Deprecated
+    public static boolean toggleHUD() {
+        try {
+            boolean newValue = !Configs.General.SHOW_HUD.getBooleanValue();
+            Configs.General.SHOW_HUD.setBooleanValue(newValue);
+            ArisLogger.info("HUD显示状态: " + (newValue ? "开启" : "关闭"));
+            return newValue;
+        } catch (Exception e) {
+            ArisLogger.error("无法切换HUD状态", e);
+            return false;
+        }
+    }
+    
+    /**
+     * 设置HUD显示状态
+     * @deprecated 使用配置系统代替
+     */
+    @Deprecated
+    public static void setHUDVisible(boolean visible) {
+        try {
+            Configs.General.SHOW_HUD.setBooleanValue(visible);
+        } catch (Exception e) {
+            ArisLogger.error("无法设置HUD状态", e);
+        }
+    }
+    
+    /**
+     * 获取HUD显示状态
+     * @deprecated 使用配置系统代替
+     */
+    @Deprecated
+    public static boolean isHUDVisible() {
+        try {
+            return Configs.General.SHOW_HUD.getBooleanValue();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * 切换详细信息显示
+     * @deprecated 使用InfoToggle系统代替
+     */
+    @Deprecated
+    public static boolean toggleDetailedInfo() {
+        // 这个功能现在通过InfoToggle.PERFORMANCE等控制
+        ArisLogger.info("详细信息切换已移至InfoToggle配置系统");
+        return true;
     }
 }

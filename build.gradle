@@ -95,10 +95,21 @@ repositories {
         name = 'ParchmentMC'
         url = 'https://maven.parchmentmc.org'
     }
+    maven {
+        name = 'JitPack'
+        url = 'https://jitpack.io'
+    }
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+    }
 }
 
 dependencies {
     minecraft 'net.minecraftforge:forge:1.20.1-47.2.0'
+    
+    // MaFgLib UI框架 (用于现代配置界面) - 使用正确的版本
+    implementation fg.deobf('maven.modrinth:mafglib:0.1.14-mc1.20.1')
     
     // JSON处理
     implementation 'com.google.code.gson:gson:2.10.1'
